@@ -29,4 +29,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    public function jnfs()
+    {
+        return $this->hasMany(Jnf::class);
+    }
+
+    public function infs()
+    {
+        return $this->hasMany(Inf::class);
+    }
 }

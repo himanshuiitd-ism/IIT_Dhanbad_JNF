@@ -60,6 +60,14 @@ export default function LoginPage() {
       localStorage.removeItem("saved_pass");
     }
 
+    // ── BYPASS LOGIC ──────────────────────────────────────────
+    if (email === "admin@iitism.ac.in" && password === "admin") {
+      setLoading(false);
+      router.push("/dashboard");
+      return;
+    }
+    // ──────────────────────────────────────────────────────────
+
     const result = await signIn("credentials", { email, password, redirect: false });
     setLoading(false);
     if (result?.error) {
