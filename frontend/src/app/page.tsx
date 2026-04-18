@@ -35,9 +35,9 @@ import VerifiedIcon from "@mui/icons-material/Verified";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 
 // ─── Design Tokens ───────────────────────────────────────────
-const RED = "#8B0000";
+const RED = "#d20000ff";
 const RED_LIGHT = "#C41230";
-const RED_DARK = "#5C0000";
+const RED_DARK = "#b60000ff";
 const CREAM = "#FFF8E7";
 const CREAM_DARK = "#F5EDD5";
 const WHITE = "#FFFFFF";
@@ -131,7 +131,7 @@ export default function HomePage() {
   };
 
   return (
-    <Box sx={{ fontFamily: "'Inter', sans-serif", bgcolor: CREAM }}>
+    <Box sx={{ fontFamily: "var(--font-inter)", bgcolor: CREAM }}>
       {/* ── NAVBAR ─────────────────────────────────────────────── */}
       <Box
         component="nav"
@@ -322,10 +322,12 @@ export default function HomePage() {
                 variant="h2"
                 sx={{
                   color: WHITE,
-                  fontWeight: 800,
-                  fontSize: { xs: "2rem", md: "3rem" },
-                  lineHeight: 1.2,
+                  fontWeight: 900,
+                  fontSize: { xs: "2.5rem", md: "4rem" },
+                  lineHeight: 1.1,
                   mb: 2.5,
+                  fontFamily: "var(--font-manrope)",
+                  letterSpacing: -1.5,
                 }}
               >
                 A One Stop Portal for{" "}
@@ -654,10 +656,11 @@ export default function HomePage() {
         <Container maxWidth="lg" sx={{ position: "relative" }}>
           <Typography
             variant="h4"
-            fontWeight={800}
+            fontWeight={900}
             textAlign="center"
             color={WHITE}
             mb={2}
+            sx={{ fontFamily: "var(--font-manrope)" }}
           >
             Why IIT (ISM) Dhanbad?
           </Typography>

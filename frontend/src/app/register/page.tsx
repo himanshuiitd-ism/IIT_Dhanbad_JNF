@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import Image from "next/image";
+import axios from "axios";
 import {
   Box,
   Typography,
@@ -11,231 +13,581 @@ import {
   CircularProgress,
   InputAdornment,
   IconButton,
-  Link,
   Stepper,
   Step,
   StepLabel,
+  Divider,
 } from "@mui/material";
-import AccountBalanceIcon from "@mui/icons-material/AccountBalance";
 import EmailOutlinedIcon from "@mui/icons-material/EmailOutlined";
 import LockOutlinedIcon from "@mui/icons-material/LockOutlined";
+import PersonOutlinedIcon from "@mui/icons-material/PersonOutlined";
+import WorkOutlineIcon from "@mui/icons-material/WorkOutline";
+import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
 import VisibilityOutlinedIcon from "@mui/icons-material/VisibilityOutlined";
 import VisibilityOffOutlinedIcon from "@mui/icons-material/VisibilityOffOutlined";
-import BusinessCenterIcon from "@mui/icons-material/BusinessCenter";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
-import CorporateFareIcon from "@mui/icons-material/CorporateFare";
-import PhoneOutlinedIcon from "@mui/icons-material/PhoneOutlined";
-import api from "@/lib/api";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import RefreshIcon from "@mui/icons-material/Refresh";
 
-const RED       = "#8B0000";
-const RED_DARK  = "#5C0000";
-const RED_LIGHT = "#C41230";
-const CREAM     = "#FFF8E7";
-const WHITE     = "#FFFFFF";
+// ─── Design Tokens ────────────────────────────────────────────────────
+const MAROON = "#b60000ff";
+const RED = "#d20000ff";
+const SURFACE = "#FBF8F8";
+const WHITE = "#FFFFFF";
+const BORDER = "rgba(0,0,0,0.1)";
 
-const steps = ["Account Details", "Organisation Info"];
+const steps = ["Email Verification", "Recruiter Details"];
 
+const inputSx = {
+  "& .MuiOutlinedInput-root": {
+    borderRadius: 2,
+    bgcolor: WHITE,
+    fontSize: "0.9rem",
+    "& fieldset": { borderColor: BORDER },
+    "&:hover fieldset": { borderColor: MAROON },
+    "&.Mui-focused fieldset": { borderColor: MAROON, borderWidth: 2 },
+  },
+};
+
+// ── OTP Input component ──────────────────────────────────────────────
+function OtpInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const refs = useRef<Array<HTMLInputElement | null>>([]);
+
+  const handleKey = (i: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Backspace" && !value[i] && i > 0) {
+      refs.current[i - 1]?.focus();
+    }
+  };
+
+  const handleChange = (i: number, v: string) => {
+    const digit = v.replace(/\D/g, "").slice(-1);
+    const arr = value.split("");
+    arr[i] = digit;
+    const next = arr.join("").padEnd(6, " ").slice(0, 6).trimEnd();
+    onChange(arr.slice(0, 6).join(""));
+    if (digit && i < 5) refs.current[i + 1]?.focus();
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
+    onChange(pasted);
+    refs.current[Math.min(pasted.length, 5)]?.focus();
+    e.preventDefault();
+  };
+
+  return (
+    <Box sx={{ display: "flex", gap: 1, justifyContent: "center" }}>
+      {Array.from({ length: 6 }).map((_, i) => (
+        <Box
+          key={i}
+          component="input"
+          ref={(el: HTMLInputElement | null) => { refs.current[i] = el; }}
+          type="text"
+          inputMode="numeric"
+          maxLength={1}
+          value={value[i] || ""}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleChange(i, e.target.value)}
+          onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => handleKey(i, e)}
+          onPaste={handlePaste}
+          sx={{
+            width: 44,
+            height: 52,
+            textAlign: "center",
+            fontSize: "1.3rem",
+            fontWeight: 800,
+            border: `2px solid ${value[i] ? MAROON : BORDER}`,
+            borderRadius: 1.5,
+            bgcolor: value[i] ? "rgba(87,0,0,0.03)" : WHITE,
+            outline: "none",
+            color: MAROON,
+            transition: "border-color 0.2s",
+            "&:focus": { borderColor: MAROON, boxShadow: `0 0 0 3px rgba(87,0,0,0.08)` },
+            cursor: "text",
+          }}
+        />
+      ))}
+    </Box>
+  );
+}
+
+// ── Main Page ────────────────────────────────────────────────────────
 export default function RegisterPage() {
   const router = useRouter();
-  const [activeStep, setActiveStep] = useState(0);
-  const [showPass, setShowPass]     = useState(false);
-  const [loading, setLoading]       = useState(false);
-  const [error, setError]           = useState("");
+  const searchParams = useSearchParams();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    organisation: "",
-    phone: "",
-  });
+  const [step, setStep] = useState(0); // 0 = email+OTP, 1 = profile details
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [registrationToken, setRegistrationToken] = useState(""); // temp token from verify-otp
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  // Step 1 state
+  const [email, setEmail] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpTimer, setOtpTimer] = useState(0);
+  const [devOtp, setDevOtp] = useState("");  // visible only in dev
 
-  const handleNext = () => {
-    if (activeStep === 0) {
-      if (!formData.name || !formData.email || !formData.password) {
-        setError("Please fill all account details.");
-        return;
-      }
-    }
-    setError("");
-    setActiveStep((prev) => prev + 1);
-  };
+  // Step 2 state
+  const [name, setName] = useState("");
+  const [designation, setDesignation] = useState("");
+  const [phone, setPhone] = useState("");
+  const [altPhone, setAltPhone] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPass, setShowPass] = useState(false);
+  const [showConfirmPass, setShowConfirmPass] = useState(false);
 
-  const handleBack = () => {
-    setActiveStep((prev) => prev - 1);
-  };
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
+  // Countdown timer for resend OTP
+  useEffect(() => {
+    if (otpTimer <= 0) return;
+    const t = setInterval(() => setOtpTimer(prev => prev - 1), 1000);
+    return () => clearInterval(t);
+  }, [otpTimer]);
 
+  // ── Step 1a: Send OTP ──────────────────────────────────────────────
+  const handleSendOtp = async () => {
+    if (!email) { setError("Please enter your company email address."); return; }
+    setError(""); setLoading(true);
     try {
-      await api.post("/register", formData);
-      // After registration, redirect to login
-      router.push("/login?registered=true");
+      const res = await axios.post("http://localhost:8000/api/auth/send-otp", { email });
+      setOtpSent(true);
+      setOtpTimer(300); // 5 min countdown
+      setSuccess("OTP sent to " + email);
+      if (res.data.dev_otp) setDevOtp(res.data.dev_otp); // dev only
     } catch (err: any) {
-      setError(err.response?.data?.message || "Registration failed. This email might already be in use.");
+      setError(err.response?.data?.message || "Failed to send OTP. Check the email and try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ── Step 1b: Verify OTP ────────────────────────────────────────────
+  const handleVerifyOtp = async () => {
+    if (otp.length !== 6) { setError("Please enter the complete 6-digit OTP."); return; }
+    setError(""); setLoading(true);
+    try {
+      const res = await axios.post("http://localhost:8000/api/auth/verify-otp", { email, otp });
+      setRegistrationToken(res.data.token);
+      setOtpVerified(true);
+      setStep(1);
+      setSuccess("");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Invalid or expired OTP.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ── Step 2: Complete Profile ────────────────────────────────────────
+  const handleCompleteProfile = async () => {
+    setError("");
+    if (!name || !designation || !phone || !password) {
+      setError("Please fill in all required fields."); return;
+    }
+    if (password !== confirmPassword) {
+      setError("Passwords do not match."); return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters."); return;
+    }
+    setLoading(true);
+    try {
+      await axios.post(
+        "http://localhost:8000/api/auth/complete-profile",
+        { name, designation, phone, alt_phone: altPhone, password, password_confirmation: confirmPassword },
+        { headers: { Authorization: `Bearer ${registrationToken}` } }
+      );
+      router.push("/login?registered=1");
+    } catch (err: any) {
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatTimer = (s: number) =>
+    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+
   return (
-    <Box sx={{ display: "flex", minHeight: "100vh", overflow: "hidden" }}>
-      {/* ── LEFT PANEL ── Register form ──────────────────────────── */}
+    <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: SURFACE }}>
+      {/* ── Left Panel ─────────────────────────────────────────────── */}
       <Box
         sx={{
-          width: { xs: "100%", md: "45%" },
-          bgcolor: RED_DARK,
+          width: { xs: "100%", lg: "55%" },
           display: "flex",
           flexDirection: "column",
-          position: "relative",
-          zIndex: 1,
-          overflowY: "auto",
+          p: { xs: 3, sm: 5, lg: 7 },
+          borderRight: `1px solid ${BORDER}`,
+          bgcolor: WHITE,
         }}
       >
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            backgroundImage:
-              "repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0px, rgba(255,255,255,0.02) 1px, transparent 1px, transparent 12px)",
-            pointerEvents: "none",
-          }}
-        />
-
-        <Box
-          sx={{
-            position: "relative",
-            zIndex: 1,
-            px: { xs: 4, md: 6 },
-            py: 5,
-            display: "flex",
-            flexDirection: "column",
-            minHeight: "100vh",
-          }}
-        >
-          <Button
-            startIcon={<ArrowBackIcon />}
-            href="/login"
-            sx={{
-              color: "rgba(255,248,231,0.65)",
-              textTransform: "none",
-              fontWeight: 500,
-              alignSelf: "flex-start",
-              mb: 4,
-              px: 0,
-              "&:hover": { color: CREAM, bgcolor: "transparent" },
-            }}
-          >
-            Back to Login
-          </Button>
-
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 4 }}>
-            <Box sx={{ width: 44, height: 44, borderRadius: "50%", bgcolor: CREAM, display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <AccountBalanceIcon sx={{ color: RED, fontSize: 22 }} />
+        {/* Header */}
+        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", mb: 5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+            <Box sx={{ bgcolor: MAROON, borderRadius: 1, p: 0.4, display: "flex" }}>
+              <Image src="/logo.png" alt="IIT Dhanbad" width={30} height={30} />
             </Box>
             <Box>
-              <Typography sx={{ color: WHITE, fontWeight: 700, fontSize: "0.92rem", lineHeight: 1.2 }}>
-                JNF Cell, IIT (ISM) Dhanbad
+              <Typography sx={{ color: MAROON, fontWeight: 900, fontSize: "0.95rem", lineHeight: 1 }}>IIT Dhanbad</Typography>
+              <Typography sx={{ color: RED, fontWeight: 600, fontSize: "0.65rem", textTransform: "uppercase", letterSpacing: 0.8 }}>
+                Career Development Centre
               </Typography>
             </Box>
           </Box>
+          <Button
+            startIcon={<ArrowBackIcon sx={{ fontSize: 16 }} />}
+            href="/login"
+            sx={{ color: "#6B7280", textTransform: "none", fontSize: "0.78rem", fontWeight: 600 }}
+          >
+            Back to Login
+          </Button>
+        </Box>
 
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 1 }}>
-            <BusinessCenterIcon sx={{ color: "#FFD700", fontSize: 28 }} />
-            <Typography variant="h4" sx={{ color: "#FFD700", fontWeight: 800, textTransform: "uppercase", fontSize: { xs: "1.4rem", md: "1.8rem" } }}>
-              New Registration
-            </Typography>
-          </Box>
-
-          <Typography sx={{ color: "rgba(255,248,231,0.7)", mb: 4, fontSize: "0.92rem" }}>
-            Join our recruitment network to reach India's finest minds.
+        {/* Page Title */}
+        <Box sx={{ mb: 4, maxWidth: 500 }}>
+          <Typography variant="h5" sx={{ fontWeight: 900, color: MAROON, mb: 0.5, letterSpacing: -0.5 }}>
+            {step === 0 ? "Create Recruiter Account" : "Complete Your Profile"}
           </Typography>
+          <Typography sx={{ color: "#6B7280", fontSize: "0.83rem" }}>
+            {step === 0
+              ? "Verify your company email to get started. We'll send a 6-digit OTP."
+              : "Enter your recruiter details to finish setting up your account."}
+          </Typography>
+        </Box>
 
-          <Stepper activeStep={activeStep} sx={{ mb: 4, "& .MuiStepLabel-label": { color: "rgba(255,248,231,0.4)" }, "& .MuiStepLabel-label.Mui-active": { color: WHITE }, "& .MuiStepIcon-root": { color: "rgba(255,255,255,0.1)" }, "& .MuiStepIcon-root.Mui-active": { color: "#FFD700" }, "& .MuiStepIcon-root.Mui-completed": { color: "#FFD700" } }}>
+        {/* Stepper */}
+        <Box sx={{ mb: 4 }}>
+          <Stepper activeStep={step} sx={{ "& .MuiStepIcon-root.Mui-active": { color: MAROON }, "& .MuiStepIcon-root.Mui-completed": { color: MAROON } }}>
             {steps.map((label) => (
               <Step key={label}>
-                <StepLabel>{label}</StepLabel>
+                <StepLabel
+                  sx={{
+                    "& .MuiStepLabel-label": { fontSize: "0.75rem", fontWeight: 700 },
+                    "& .MuiStepLabel-label.Mui-active": { color: MAROON },
+                    "& .MuiStepLabel-label.Mui-completed": { color: MAROON },
+                  }}
+                >
+                  {label}
+                </StepLabel>
               </Step>
             ))}
           </Stepper>
+        </Box>
 
-          {error && <Alert severity="error" sx={{ mb: 3, bgcolor: "rgba(255,50,50,0.15)", color: "#ffcdd2", border: "1px solid rgba(255,100,100,0.2)" }}>{error}</Alert>}
+        {/* Alerts */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2, fontSize: "0.8rem", borderRadius: 1.5 }} onClose={() => setError("")}>
+            {error}
+          </Alert>
+        )}
+        {success && (
+          <Alert severity="success" sx={{ mb: 2, fontSize: "0.8rem", borderRadius: 1.5 }} onClose={() => setSuccess("")}>
+            {success}
+          </Alert>
+        )}
 
-          <Box component="form" onSubmit={handleSubmit} sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
-            {activeStep === 0 ? (
-              <>
-                <Box>
-                  <Typography sx={{ color: "rgba(255,248,231,0.7)", fontSize: "0.75rem", fontWeight: 600, mb: 1 }}>FULL NAME</Typography>
-                  <TextField name="name" fullWidth required placeholder="John Doe" value={formData.name} onChange={handleChange} InputProps={{ startAdornment: (<InputAdornment position="start"><PersonOutlineIcon sx={{ color: "rgba(255,248,231,0.4)", fontSize: 20 }} /></InputAdornment>) }} sx={textFieldSx} />
-                </Box>
-                <Box>
-                  <Typography sx={{ color: "rgba(255,248,231,0.7)", fontSize: "0.75rem", fontWeight: 600, mb: 1 }}>EMAIL ADDRESS</Typography>
-                  <TextField name="email" type="email" fullWidth required placeholder="john@company.com" value={formData.email} onChange={handleChange} InputProps={{ startAdornment: (<InputAdornment position="start"><EmailOutlinedIcon sx={{ color: "rgba(255,248,231,0.4)", fontSize: 20 }} /></InputAdornment>) }} sx={textFieldSx} />
-                </Box>
-                <Box>
-                  <Typography sx={{ color: "rgba(255,248,231,0.7)", fontSize: "0.75rem", fontWeight: 600, mb: 1 }}>PASSWORD</Typography>
-                  <TextField name="password" type={showPass ? "text" : "password"} fullWidth required placeholder="Min 8 characters" value={formData.password} onChange={handleChange} InputProps={{ startAdornment: (<InputAdornment position="start"><LockOutlinedIcon sx={{ color: "rgba(255,248,231,0.4)", fontSize: 20 }} /></InputAdornment>), endAdornment: (<InputAdornment position="end"><IconButton onClick={() => setShowPass(!showPass)} sx={{ color: "rgba(255,248,231,0.4)" }}>{showPass ? <VisibilityOffOutlinedIcon /> : <VisibilityOutlinedIcon />}</IconButton></InputAdornment>) }} sx={textFieldSx} />
-                </Box>
-                <Button variant="contained" fullWidth onClick={handleNext} sx={primaryBtnSx}>Next Step →</Button>
-              </>
-            ) : (
-              <>
-                <Box>
-                  <Typography sx={{ color: "rgba(255,248,231,0.7)", fontSize: "0.75rem", fontWeight: 600, mb: 1 }}>ORGANISATION NAME</Typography>
-                  <TextField name="organisation" fullWidth required placeholder="Example Tech Corp" value={formData.organisation} onChange={handleChange} InputProps={{ startAdornment: (<InputAdornment position="start"><CorporateFareIcon sx={{ color: "rgba(255,248,231,0.4)", fontSize: 20 }} /></InputAdornment>) }} sx={textFieldSx} />
-                </Box>
-                <Box>
-                  <Typography sx={{ color: "rgba(255,248,231,0.7)", fontSize: "0.75rem", fontWeight: 600, mb: 1 }}>PHONE NUMBER</Typography>
-                  <TextField name="phone" fullWidth required placeholder="+91 XXXXXXXXXX" value={formData.phone} onChange={handleChange} InputProps={{ startAdornment: (<InputAdornment position="start"><PhoneOutlinedIcon sx={{ color: "rgba(255,248,231,0.4)", fontSize: 20 }} /></InputAdornment>) }} sx={textFieldSx} />
-                </Box>
-                <Box sx={{ display: "flex", gap: 2 }}>
-                  <Button variant="outlined" fullWidth onClick={handleBack} sx={secondaryBtnSx}>Back</Button>
-                  <Button variant="contained" fullWidth type="submit" disabled={loading} sx={primaryBtnSx}>{loading ? <CircularProgress size={22} sx={{ color: WHITE }} /> : "Register →"}</Button>
-                </Box>
-              </>
+        {/* ── STEP 1: Email Verification ────────────────────────────── */}
+        {step === 0 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5, maxWidth: 480 }}>
+            {/* Email field */}
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Company Email Address *
+              </Typography>
+              <Box sx={{ display: "flex", gap: 1 }}>
+                <TextField
+                  fullWidth
+                  placeholder="recruiter@company.com"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={otpSent && !otpVerified}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><EmailOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment>,
+                  }}
+                  sx={inputSx}
+                />
+                <Button
+                  variant="contained"
+                  onClick={handleSendOtp}
+                  disabled={loading || !!otpTimer || !email}
+                  sx={{
+                    whiteSpace: "nowrap",
+                    bgcolor: MAROON,
+                    color: WHITE,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    fontSize: "0.78rem",
+                    px: 2.5,
+                    borderRadius: 2,
+                    minWidth: 110,
+                    "&:hover": { bgcolor: RED },
+                  }}
+                >
+                  {loading ? <CircularProgress size={16} color="inherit" /> : otpSent ? "Resend" : "Send OTP"}
+                </Button>
+              </Box>
+              {otpTimer > 0 && (
+                <Typography sx={{ fontSize: "0.72rem", color: "#6B7280", mt: 0.5 }}>
+                  Resend available in <strong>{formatTimer(otpTimer)}</strong>
+                </Typography>
+              )}
+            </Box>
+
+            {/* Dev OTP hint */}
+            {devOtp && (
+              <Alert severity="info" sx={{ fontSize: "0.78rem", "& .MuiAlert-message": { fontWeight: 700 } }}>
+                Dev mode — Your OTP: <strong>{devOtp}</strong>
+              </Alert>
             )}
-            <Typography sx={{ textAlign: "center", color: "rgba(255,248,231,0.5)", fontSize: "0.8rem" }}>
-              Already registered? <Link href="/login" sx={{ color: CREAM, fontWeight: 600 }}>Login here</Link>
-            </Typography>
+
+            {/* OTP Entry */}
+            {otpSent && (
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 1.5, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Enter 6-Digit OTP (5 min expiry)
+                </Typography>
+                <OtpInput value={otp} onChange={setOtp} />
+
+                <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={handleVerifyOtp}
+                  disabled={loading || otp.length !== 6}
+                  sx={{
+                    mt: 2,
+                    bgcolor: MAROON,
+                    color: WHITE,
+                    py: 1.3,
+                    textTransform: "none",
+                    fontWeight: 800,
+                    fontSize: "0.9rem",
+                    borderRadius: 2,
+                    "&:hover": { bgcolor: RED },
+                  }}
+                >
+                  {loading
+                    ? <CircularProgress size={20} color="inherit" />
+                    : <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}><CheckCircleOutlineIcon sx={{ fontSize: 18 }} /> Verify & Proceed</Box>}
+                </Button>
+              </Box>
+            )}
+
+            {!otpSent && (
+              <Button
+                fullWidth
+                variant="contained"
+                onClick={handleSendOtp}
+                disabled={loading || !email}
+                sx={{
+                  bgcolor: MAROON,
+                  color: WHITE,
+                  py: 1.3,
+                  textTransform: "none",
+                  fontWeight: 800,
+                  fontSize: "0.9rem",
+                  borderRadius: 2,
+                  "&:hover": { bgcolor: RED },
+                }}
+              >
+                {loading ? <CircularProgress size={20} color="inherit" /> : "Send OTP →"}
+              </Button>
+            )}
           </Box>
+        )}
+
+        {/* ── STEP 2: Recruiter Details ────────────────────────────── */}
+        {step === 1 && (
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, maxWidth: 480 }}>
+            {/* Verified email banner */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1, bgcolor: "rgba(5,150,105,0.06)", border: "1px solid rgba(5,150,105,0.2)", borderRadius: 1.5, p: 1.5 }}>
+              <CheckCircleOutlineIcon sx={{ fontSize: 18, color: "#059669" }} />
+              <Typography sx={{ fontSize: "0.78rem", color: "#065F46", fontWeight: 600 }}>
+                Email verified: <strong>{email}</strong>
+              </Typography>
+            </Box>
+
+            {/* Full Name */}
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Full Name of Recruiter *
+              </Typography>
+              <TextField
+                fullWidth placeholder="John Smith"
+                value={name} onChange={(e) => setName(e.target.value)}
+                InputProps={{ startAdornment: <InputAdornment position="start"><PersonOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment> }}
+                sx={inputSx}
+              />
+            </Box>
+
+            {/* Designation */}
+            <Box>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Designation *
+              </Typography>
+              <TextField
+                fullWidth placeholder="e.g. HR Manager, Campus Recruiter"
+                value={designation} onChange={(e) => setDesignation(e.target.value)}
+                InputProps={{ startAdornment: <InputAdornment position="start"><WorkOutlineIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment> }}
+                sx={inputSx}
+              />
+            </Box>
+
+            {/* Phone numbers */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Contact Number *
+                </Typography>
+                <TextField
+                  fullWidth placeholder="+91 98765 43210"
+                  value={phone} onChange={(e) => setPhone(e.target.value)}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><PhoneOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment> }}
+                  sx={inputSx}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Alternative Mobile
+                </Typography>
+                <TextField
+                  fullWidth placeholder="+91 98765 43210"
+                  value={altPhone} onChange={(e) => setAltPhone(e.target.value)}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><PhoneOutlinedIcon sx={{ color: "#9CA3AF", fontSize: 18 }} /></InputAdornment> }}
+                  sx={inputSx}
+                />
+              </Box>
+            </Box>
+
+            <Divider sx={{ my: 0.5 }} />
+
+            {/* Password */}
+            <Box sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 1.5 }}>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Password *
+                </Typography>
+                <TextField
+                  type={showPass ? "text" : "password"}
+                  fullWidth placeholder="Min. 8 characters"
+                  value={password} onChange={(e) => setPassword(e.target.value)}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><LockOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment>,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setShowPass(!showPass)}>
+                          {showPass ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={inputSx}
+                />
+              </Box>
+              <Box>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.72rem", color: "#374151", mb: 0.75, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                  Confirm Password *
+                </Typography>
+                <TextField
+                  type={showConfirmPass ? "text" : "password"}
+                  fullWidth placeholder="Repeat password"
+                  value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)}
+                  error={!!confirmPassword && confirmPassword !== password}
+                  helperText={confirmPassword && confirmPassword !== password ? "Passwords do not match" : ""}
+                  InputProps={{
+                    startAdornment: <InputAdornment position="start"><LockOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment>,
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setShowConfirmPass(!showConfirmPass)}>
+                          {showConfirmPass ? <VisibilityOffOutlinedIcon sx={{ fontSize: 18 }} /> : <VisibilityOutlinedIcon sx={{ fontSize: 18 }} />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={inputSx}
+                />
+              </Box>
+            </Box>
+
+            <Button
+              fullWidth variant="contained"
+              onClick={handleCompleteProfile}
+              disabled={loading}
+              sx={{
+                mt: 1,
+                bgcolor: MAROON,
+                color: WHITE,
+                py: 1.4,
+                textTransform: "none",
+                fontWeight: 800,
+                fontSize: "0.9rem",
+                borderRadius: 2,
+                "&:hover": { bgcolor: RED },
+              }}
+            >
+              {loading ? <CircularProgress size={20} color="inherit" /> : "Complete Registration →"}
+            </Button>
+          </Box>
+        )}
+
+        {/* Footer */}
+        <Box sx={{ mt: "auto", pt: 5 }}>
+          <Typography sx={{ fontSize: "0.72rem", color: "#9CA3AF" }}>
+            Already have an account?{" "}
+            <Button href="/login" variant="text" sx={{ color: MAROON, fontWeight: 800, textTransform: "none", fontSize: "0.72rem", p: 0, minWidth: 0 }}>
+              Sign In
+            </Button>
+          </Typography>
+          <Typography sx={{ fontSize: "0.68rem", color: "#D1D5DB", mt: 1 }}>
+            © {new Date().getFullYear()} IIT (ISM) Dhanbad • Established 1926
+          </Typography>
         </Box>
       </Box>
 
-      {/* ── RIGHT PANEL ── Campus photo ──────────────────────────── */}
-      <Box sx={{ display: { xs: "none", md: "flex" }, width: "55%", position: "relative" }}>
-        <Box sx={{ position: "absolute", inset: 0, backgroundImage: "url('/campus-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center" }} />
-        <Box sx={{ position: "absolute", inset: 0, background: "linear-gradient(90deg, rgba(92,0,0,0.3) 0%, rgba(0,0,0,0) 60%)" }} />
+      {/* ── Right Panel ────────────────────────────────────────────── */}
+      <Box
+        sx={{
+          display: { xs: "none", lg: "flex" },
+          width: "45%",
+          flexDirection: "column",
+          justifyContent: "flex-end",
+          position: "relative",
+          bgcolor: MAROON,
+          p: 7,
+        }}
+      >
+        <Box sx={{ position: "absolute", inset: 0, backgroundImage: "url('/campus-hero.jpg')", backgroundSize: "cover", backgroundPosition: "center", opacity: 0.35, mixBlendMode: "luminosity" }} />
+        <Box sx={{ position: "absolute", inset: 0, bgcolor: "rgba(87,0,0,0.5)" }} />
+        <Box sx={{ position: "relative", zIndex: 2 }}>
+          <Typography sx={{ color: "rgba(255,255,255,0.5)", fontWeight: 700, fontSize: "0.7rem", textTransform: "uppercase", letterSpacing: 2, mb: 2 }}>
+            Career Development Centre
+          </Typography>
+          <Typography variant="h3" sx={{ color: WHITE, fontWeight: 900, lineHeight: 1.1, letterSpacing: -1, mb: 2 }}>
+            {step === 0 ? "Join India's Finest\nEngineering Talent" : "One Step Away\nFrom Top Talent"}
+          </Typography>
+          <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.88rem", lineHeight: 1.7, maxWidth: 380, mb: 4 }}>
+            {step === 0
+              ? "IIT (ISM) Dhanbad's placement portal connects you with over 8,600 scholars across 17 departments. Begin your journey with a simple email verification."
+              : "Fill in your details to complete registration. You'll have immediate access to post JNFs, submit INFs, and coordinate with our placement office."}
+          </Typography>
+
+          <Box sx={{ display: "flex", gap: 4 }}>
+            {[
+              { val: "8600+", label: "Scholars" },
+              { val: "17", label: "Departments" },
+              { val: "1926", label: "Established" },
+            ].map(s => (
+              <Box key={s.label}>
+                <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: "1.3rem", lineHeight: 1 }}>{s.val}</Typography>
+                <Typography sx={{ color: "rgba(255,255,255,0.5)", fontSize: "0.65rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5 }}>{s.label}</Typography>
+              </Box>
+            ))}
+          </Box>
+        </Box>
       </Box>
     </Box>
   );
 }
-
-const textFieldSx = {
-  "& .MuiOutlinedInput-root": {
-    bgcolor: "rgba(255,255,255,0.06)",
-    borderRadius: 2,
-    color: WHITE,
-    "& fieldset": { borderColor: "rgba(255,248,231,0.15)" },
-    "&:hover fieldset": { borderColor: "rgba(255,248,231,0.4)" },
-    "&.Mui-focused fieldset": { borderColor: "#FFD700" },
-  },
-  "& input::placeholder": { color: "rgba(255,248,231,0.25)", fontSize: "0.85rem" },
-};
-
-const primaryBtnSx = {
-  mt: 1, py: 1.5, bgcolor: RED_LIGHT, color: WHITE, fontWeight: 700, borderRadius: 2, textTransform: "none",
-  "&:hover": { bgcolor: "#9B1020", transform: "translateY(-1px)" }
-};
-
-const secondaryBtnSx = {
-  py: 1.5, borderColor: "rgba(255,248,231,0.3)", color: CREAM, borderRadius: 2, textTransform: "none",
-  "&:hover": { borderColor: CREAM, bgcolor: "rgba(255,248,231,0.05)" }
-};

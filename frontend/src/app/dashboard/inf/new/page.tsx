@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import {
   Box,
   Typography,
@@ -15,45 +16,60 @@ import {
   FormControlLabel,
   Checkbox,
   FormGroup,
-  Divider,
   Container,
   IconButton,
   Alert,
   CircularProgress,
+  Switch,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import axios from "axios";
 
-// Constants
-const RED = "#8B0000";
-const RED_DARK = "#5C0000";
+// ─── Design Tokens (The Heritage Modernist) ───────────────────
+const MAROON = "#860000ff";
+const RED = "#c00000ff";
+const SURFACE = "#FFFFFF"; // Changed to white
+const GREY_RED = "#FBF8F8"; // Little grey-red
 const WHITE = "#FFFFFF";
+const BORDER_GHOST = "rgba(128, 0, 0, 0.08)";
 
 const steps = [
   "Company Overview",
-  "Contact Info",
+  "Contact Person",
   "Internship Profile",
   "Eligibility & Selection",
-  "Review"
+  "Final Review"
 ];
 
 const DEPARTMENTS = [
-  "Computer Science and Engineering",
-  "Mathematics and Computing",
-  "Electrical Engineering",
-  "Electronics and Communication Engineering",
-  "Mechanical Engineering",
-  "Civil Engineering",
-  "Mining Engineering",
-  "Petroleum Engineering",
-  "Chemical Engineering",
   "Applied Geology",
   "Applied Geophysics",
-  "Environmental Engineering",
-  "Fuel, Mineral and Metallurgical Engineering",
+  "Chemistry and Chemical Biology",
+  "Chemical Engineering",
+  "Computer Science and Engineering",
+  "Civil Engineering",
+  "Electronics Engineering",
+  "Electrical Engineering",
+  "Environmental Science & Engineering",
+  "Fuel, Minerals and Metallurgical Engineering",
+  "Humanities and Social Sciences",
+  "Mathematics and Computing",
+  "Mining Engineering",
+  "Mechanical Engineering",
+  "Management Studies and Industrial Engineering",
+  "Petroleum Engineering",
   "Physics",
-  "Chemistry",
-  "Management Studies",
+];
+
+const COURSES = [
+  "B.Tech",
+  "Dual Degree",
+  "Integrated M.Tech",
+  "M.Sc",
+  "M.Sc Tech",
+  "M.Tech",
+  "MBA",
+  "Ph.D"
 ];
 
 export default function NewINFPage() {
@@ -83,14 +99,12 @@ export default function NewINFPage() {
     ppo_provision: false,
     ppo_ctc: "",
     
-    eligible_degrees: [],
-    eligible_departments: [],
+    eligible_degrees: [] as string[],
+    eligible_departments: [] as string[],
     min_cutoff_cgpa: "",
     
     selection_ppt: false,
-    selection_shortlisting: [],
-    selection_tests: [],
-    selection_rounds: [],
+    selection_rounds: [] as string[],
   });
 
   const handleNext = () => setActiveStep((prev) => prev + 1);
@@ -100,8 +114,13 @@ export default function NewINFPage() {
     const { name, value, checked, type } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value,
+      [name]: type === "checkbox" || type === "button-switch" ? checked : value,
     }));
+  };
+
+  const handleSwitchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, checked } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: checked }));
   };
 
   const handleCheckboxChange = (group: string, value: string) => {
@@ -130,71 +149,120 @@ export default function NewINFPage() {
     switch (step) {
       case 0:
         return (
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Website" name="website" value={formData.website} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12}><TextField fullWidth label="Address" name="postal_address" value={formData.postal_address} onChange={handleChange} multiline rows={2} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Sector" name="sector" value={formData.sector} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Category" name="category" value={formData.category} onChange={handleChange} size="small" /></Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Company Name" name="company_name" value={formData.company_name} onChange={handleChange} required variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Website" name="website" value={formData.website} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField fullWidth label="Postal Address" name="postal_address" value={formData.postal_address} onChange={handleChange} multiline rows={2} variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Sector" name="sector" value={formData.sector} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Category" name="category" value={formData.category} onChange={handleChange} variant="filled" />
+            </Grid>
           </Grid>
         );
       case 1:
         return (
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="HR Name" name="primary_contact_name" value={formData.primary_contact_name} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Designation" name="primary_contact_designation" value={formData.primary_contact_designation} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Email" name="primary_contact_email" value={formData.primary_contact_email} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Phone" name="primary_contact_phone" value={formData.primary_contact_phone} onChange={handleChange} size="small" /></Grid>
-          </Grid>
+          <>
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, fontFamily: "var(--font-manrope)", color: MAROON }}>Primary Contact</Typography>
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Name" name="primary_contact_name" value={formData.primary_contact_name} onChange={handleChange} variant="filled" /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Designation" name="primary_contact_designation" value={formData.primary_contact_designation} onChange={handleChange} variant="filled" /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Email" name="primary_contact_email" value={formData.primary_contact_email} onChange={handleChange} variant="filled" /></Grid>
+              <Grid item xs={12} sm={6}><TextField fullWidth label="Phone" name="primary_contact_phone" value={formData.primary_contact_phone} onChange={handleChange} variant="filled" /></Grid>
+            </Grid>
+          </>
         );
       case 2:
         return (
-          <Grid container spacing={2.5}>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Internship Role" name="internship_designation" value={formData.internship_designation} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={6}><TextField fullWidth label="Posting Location" name="place_of_posting" value={formData.place_of_posting} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12}><TextField fullWidth label="Brief Description" name="internship_description" value={formData.internship_description} onChange={handleChange} multiline rows={3} size="small" /></Grid>
-            <Grid item xs={12} sm={4}><TextField fullWidth label="Duration (Weeks)" name="duration_weeks" value={formData.duration_weeks} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={4}><TextField fullWidth label="Stipend (Monthly)" name="monthly_stipend" value={formData.monthly_stipend} onChange={handleChange} size="small" /></Grid>
-            <Grid item xs={12} sm={4}><FormControlLabel control={<Checkbox name="ppo_provision" checked={formData.ppo_provision} onChange={handleChange} />} label={<Typography sx={{ fontSize: "0.85rem" }}>PPO Provision?</Typography>} /></Grid>
+          <Grid container spacing={3}>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Internship Designation" name="internship_designation" value={formData.internship_designation} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Place of Posting" name="place_of_posting" value={formData.place_of_posting} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField fullWidth label="Internship Description" name="internship_description" value={formData.internship_description} onChange={handleChange} multiline rows={4} variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Duration (Weeks)" name="duration_weeks" value={formData.duration_weeks} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12} sm={6}>
+              <TextField fullWidth label="Monthly Stipend" name="monthly_stipend" value={formData.monthly_stipend} onChange={handleChange} variant="filled" />
+            </Grid>
+            <Grid item xs={12}>
+               <Box sx={{ display: "flex", alignItems: "center", gap: 2, bgcolor: SURFACE, p: 2, borderRadius: 2 }}>
+                  <Typography variant="body1" fontWeight={600}>PPO Provision?</Typography>
+                  <Switch name="ppo_provision" checked={formData.ppo_provision} onChange={handleSwitchChange} color="primary" />
+               </Box>
+            </Grid>
             {formData.ppo_provision && (
-                <Grid item xs={12}><TextField fullWidth label="Expected PPO CTC" name="ppo_ctc" value={formData.ppo_ctc} onChange={handleChange} size="small" /></Grid>
+               <Grid item xs={12}>
+                  <TextField fullWidth label="CTC if PPO is offered" name="ppo_ctc" value={formData.ppo_ctc} onChange={handleChange} variant="filled" helperText="Approximate CTC after conversion to Full Time" />
+               </Grid>
             )}
           </Grid>
         );
       case 3:
         return (
           <Box>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Target Departments</Typography>
-            <FormGroup sx={{ display: "grid", gridTemplateColumns: "1fr 1fr", mb: 3 }}>
-              {DEPARTMENTS.map((dept) => (
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, fontFamily: "var(--font-manrope)", color: MAROON }}>Eligible Degrees</Typography>
+            <FormGroup sx={{ display: "flex", flexDirection: "row", flexWrap: "wrap", gap: 1, mb: 4 }}>
+              {COURSES.map((course) => (
                 <FormControlLabel
-                  key={dept}
-                  control={<Checkbox size="small" checked={formData.eligible_departments.includes(dept as never)} onChange={() => handleCheckboxChange("eligible_departments", dept)} />}
-                  label={<Typography sx={{ fontSize: "0.75rem" }}>{dept}</Typography>}
+                  key={course}
+                  control={<Checkbox size="small" checked={formData.eligible_degrees.includes(course)} onChange={() => handleCheckboxChange("eligible_degrees", course)} />}
+                  label={<Typography sx={{ fontSize: "0.85rem" }}>{course}</Typography>}
                 />
               ))}
             </FormGroup>
-            <Divider sx={{ my: 3 }} />
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 700 }}>Selection Details</Typography>
-            <Grid container spacing={2}>
-                <Grid item xs={12} sm={6}><TextField fullWidth label="Min CGPA" name="min_cutoff_cgpa" value={formData.min_cutoff_cgpa} onChange={handleChange} size="small" /></Grid>
-                <Grid item xs={12} sm={6}><FormControlLabel control={<Checkbox name="selection_ppt" checked={formData.selection_ppt} onChange={handleChange} />} label="PPT required?" /></Grid>
+
+            <Typography variant="h6" sx={{ mb: 2, fontWeight: 700, fontFamily: "var(--font-manrope)", color: MAROON }}>Eligible Departments</Typography>
+            <FormGroup sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, mb: 4 }}>
+              {DEPARTMENTS.map((dept) => (
+                <FormControlLabel
+                  key={dept}
+                  control={<Checkbox size="small" checked={formData.eligible_departments.includes(dept)} onChange={() => handleCheckboxChange("eligible_departments", dept)} />}
+                  label={<Typography sx={{ fontSize: "0.8rem" }}>{dept}</Typography>}
+                />
+              ))}
+            </FormGroup>
+
+            <Grid container spacing={3}>
+              <Grid item xs={12} sm={6}>
+                <TextField fullWidth label="Min Cutoff CGPA" name="min_cutoff_cgpa" value={formData.min_cutoff_cgpa} onChange={handleChange} variant="filled" />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <FormControlLabel control={<Checkbox name="selection_ppt" checked={formData.selection_ppt} onChange={handleChange} />} label="Pre-Placement Talk required?" />
+              </Grid>
             </Grid>
           </Box>
         );
       case 4:
         return (
-          <Paper variant="outlined" sx={{ p: 3, bgcolor: "#FAFAFA" }}>
-            <Typography variant="subtitle1" fontWeight={700} gutterBottom>Review details for INF</Typography>
-            <Grid container spacing={1.5} sx={{ mt: 1 }}>
-              <Grid item xs={4}><Typography variant="caption" color="text.secondary">Company</Typography></Grid>
-              <Grid item xs={8}><Typography variant="body2" fontWeight={600}>{formData.company_name}</Typography></Grid>
-              <Grid item xs={4}><Typography variant="caption" color="text.secondary">Stipend</Typography></Grid>
-              <Grid item xs={8}><Typography variant="body2" fontWeight={600}>₹{formData.monthly_stipend} / month</Typography></Grid>
-              <Grid item xs={4}><Typography variant="caption" color="text.secondary">Duration</Typography></Grid>
-              <Grid item xs={8}><Typography variant="body2" fontWeight={600}>{formData.duration_weeks} Weeks</Typography></Grid>
-            </Grid>
-          </Paper>
+          <Box>
+            <Typography variant="h5" sx={{ mb: 2, fontWeight: 800, fontFamily: "var(--font-manrope)", color: MAROON }}>Final Review (INF)</Typography>
+            <Typography variant="body1" sx={{ mb: 4, opacity: 0.8 }}>Please verify Internship details.</Typography>
+            
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+               <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, border: `1px solid ${SURFACE}` }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Organization</Typography>
+                  <Typography variant="h6" fontWeight={700} color={MAROON}>{formData.company_name}</Typography>
+               </Paper>
+               <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, border: `1px solid ${SURFACE}` }}>
+                  <Typography variant="subtitle2" color="text.secondary" gutterBottom>Role & Duration</Typography>
+                  <Typography variant="h6" fontWeight={700} color={MAROON}>{formData.internship_designation} ({formData.duration_weeks} Weeks)</Typography>
+                  <Typography variant="body1">Stipend: {formData.monthly_stipend} / month</Typography>
+               </Paper>
+            </Box>
+          </Box>
         );
       default:
         return null;
@@ -202,36 +270,60 @@ export default function NewINFPage() {
   };
 
   return (
-    <Box sx={{ minHeight: "100vh", bgcolor: "#F9FAFB", py: 4 }}>
-      <Container maxWidth="md">
-        <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
-          <IconButton onClick={() => router.back()} sx={{ bgcolor: WHITE, border: "1px solid #E5E7EB" }}><ArrowBackIcon fontSize="small" /></IconButton>
-          <Box>
-            <Typography variant="h5" sx={{ fontWeight: 800, color: "#111827" }}>Internship Notification Form (INF)</Typography>
-            <Typography variant="body2" color="text.secondary">Summer / Seasonal Internship Season 2024-25</Typography>
+    <Box sx={{ minHeight: "100vh", bgcolor: GREY_RED, pb: 10 }}>
+      {/* ── HEADER ───────────────────────────────────────────── */}
+      <Box sx={{ bgcolor: MAROON, py: 2, mb: 4, borderBottom: `1px solid ${BORDER_GHOST}` }}>
+        <Container maxWidth="lg">
+          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 3 }}>
+              <Box sx={{ position: "relative", width: 60, height: 60, bgcolor: WHITE, borderRadius: "50%", p: 0.5 }}>
+                <Image src="/logo.png" alt="Logo" width={60} height={60} style={{ objectFit: "contain" }} />
+              </Box>
+              <Box>
+                <Typography variant="h5" sx={{ color: WHITE, fontWeight: 900, fontFamily: "var(--font-manrope)" }}>
+                  IIT Dhanbad
+                </Typography>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.7)", fontWeight: 700, letterSpacing: 1.5, textTransform: "uppercase" }}>
+                  Career Development Centre
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton onClick={() => router.back()} sx={{ color: WHITE, border: `1px solid rgba(255,255,255,0.2)` }}>
+              <ArrowBackIcon />
+            </IconButton>
           </Box>
-        </Box>
+        </Container>
+      </Box>
 
-        <Paper sx={{ p: { xs: 3, md: 5 }, borderRadius: 3 }}>
-          <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 5 }}>
+      <Container maxWidth="md">
+        <Typography variant="h3" sx={{ fontWeight: 900, fontFamily: "var(--font-manrope)", color: MAROON, mb: 4 }}>
+          INF 2024-25
+        </Typography>
+
+        <Paper elevation={0} sx={{ p: { xs: 4, md: 6 }, borderRadius: 4, bgcolor: WHITE, boxShadow: "0 20px 50px rgba(87, 0, 0, 0.05)" }}>
+          <Stepper activeStep={activeStep} sx={{ mb: 8, "& .MuiStepIcon-root.Mui-active": { color: RED } }}>
             {steps.map((label) => (
-              <Step key={label}><StepLabel sx={{ "& .MuiStepLabel-label": { fontSize: "0.7rem", fontWeight: 700 } }}>{label}</StepLabel></Step>
+              <Step key={label}>
+                <StepLabel sx={{ "& .MuiStepLabel-label": { fontSize: "0.75rem", fontWeight: 700, fontFamily: "var(--font-manrope)" } }}>{label}</StepLabel>
+              </Step>
             ))}
           </Stepper>
 
-          {error && <Alert severity="error" sx={{ mb: 3 }}>{error}</Alert>}
+          {error && <Alert severity="error" sx={{ mb: 4 }}>{error}</Alert>}
 
-          <Box sx={{ minHeight: 250 }}>{renderStepContent(activeStep)}</Box>
+          <Box sx={{ minHeight: 400 }}>
+            {renderStepContent(activeStep)}
+          </Box>
 
-          <Box sx={{ mt: 5, display: "flex", justifyContent: "space-between" }}>
-            <Button disabled={activeStep === 0} onClick={handleBack} variant="outlined" sx={{ textTransform: "none", fontWeight: 600 }}>Back</Button>
-            <Box>
+          <Box sx={{ mt: 8, display: "flex", justifyContent: "space-between" }}>
+            <Button disabled={activeStep === 0} onClick={handleBack} sx={{ color: MAROON, fontWeight: 700 }}>Back</Button>
+            <Box sx={{ display: "flex", gap: 2 }}>
               {activeStep === steps.length - 1 ? (
-                <Button onClick={handleSubmit} variant="contained" disabled={loading} sx={{ bgcolor: RED, color: WHITE, textTransform: "none", fontWeight: 600, px: 4 }}>
-                   {loading ? <CircularProgress size={24} color="inherit" /> : "Submit INF"}
+                <Button onClick={handleSubmit} variant="contained" disabled={loading} sx={{ bgcolor: RED, color: WHITE, fontWeight: 800, px: 6, py: 1.5, borderRadius: 2, "&:hover": { bgcolor: MAROON } }}>
+                  {loading ? <CircularProgress size={24} color="inherit" /> : "Submit INF"}
                 </Button>
               ) : (
-                <Button onClick={handleNext} variant="contained" sx={{ bgcolor: "#111827", color: WHITE, textTransform: "none", fontWeight: 600, px: 4 }}>Next Stage</Button>
+                <Button onClick={handleNext} variant="contained" sx={{ bgcolor: RED, color: WHITE, fontWeight: 700, px: 6, py: 1.5, borderRadius: 2, "&:hover": { bgcolor: MAROON } }}>Next Section</Button>
               )}
             </Box>
           </Box>
