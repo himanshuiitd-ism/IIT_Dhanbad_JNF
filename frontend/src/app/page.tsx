@@ -375,7 +375,7 @@ export default function HomePage() {
                   { label: "Student", sub: "Access jobs, internships & profile", icon: <PersonIcon />, href: "/login" },
                   { label: "Recruiter", sub: "Post jobs & manage candidates", icon: <BusinessCenterIcon />, href: "/login" },
                   { label: "Coordinator", sub: "Manage drives & student data", icon: <AdminPanelSettingsIcon />, href: "/login" },
-                  { label: "Verifier", sub: "Verify offers & documents", icon: <VerifiedIcon />, href: "/login" },
+                  { label: "Verifier", sub: "Verify offers & documents", icon: <VerifiedIcon />, href: "/login?role=admin" },
                 ].map((btn) => (
                   <Button
                     key={btn.label}

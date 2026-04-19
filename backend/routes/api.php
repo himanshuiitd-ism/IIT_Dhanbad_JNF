@@ -47,6 +47,25 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/edit-requests/{editRequest}/approve',    [\App\Http\Controllers\Api\EditRequestController::class, 'approve']);
     Route::post('/edit-requests/{editRequest}/reject',     [\App\Http\Controllers\Api\EditRequestController::class, 'reject']);
 
-    // AI PDF Parser route
+    // ── Notifications ───────────────────────────────────────────────
+    Route::get('/notifications',      [AuthController::class, 'getNotifications']);
+    Route::post('/notifications/read', [AuthController::class, 'markNotificationsRead']);
+
+    // ── Admin routes (Simplified check - or use middleware) ───────
+    Route::prefix('admin')->group(function () {
+        Route::get('/stats',                    [\App\Http\Controllers\Api\AdminController::class, 'getStats']);
+        Route::get('/users',                    [\App\Http\Controllers\Api\AdminController::class, 'getUsers']);
+        Route::get('/forms',                    [\App\Http\Controllers\Api\AdminController::class, 'getForms']);
+        Route::get('/forms/{type}/{id}',        [\App\Http\Controllers\Api\AdminController::class, 'getFormDetails']);
+        Route::patch('/forms/{type}/{id}',      [\App\Http\Controllers\Api\AdminController::class, 'updateFormStatus']);
+        Route::post('/communicate',             [\App\Http\Controllers\Api\AdminController::class, 'sendCommunication']);
+        Route::get('/forms/{type}/{id}/comms',  [\App\Http\Controllers\Api\AdminController::class, 'getFormCommunications']);
+    });
+
+    // ── AI PDF Parser route ────────────────────────────────────────
     Route::post('/parse-pdf', [\App\Http\Controllers\Api\PdfParserController::class, 'parse']);
+
+    // ── System Initialization ──────────────────────────────────────
+    Route::post('/init', [\App\Http\Controllers\Api\InitController::class, 'initialize']);
+    Route::get('/init',  [\App\Http\Controllers\Api\InitController::class, 'getMasterData']);
 });

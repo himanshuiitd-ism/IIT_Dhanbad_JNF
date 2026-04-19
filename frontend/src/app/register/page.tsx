@@ -36,7 +36,7 @@ const SURFACE = "#FBF8F8";
 const WHITE = "#FFFFFF";
 const BORDER = "rgba(0,0,0,0.1)";
 
-const steps = ["Email Verification", "Recruiter Details"];
+const steps = ["Email Verification", "Recruiter Details", "Company Profile"];
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -200,7 +200,7 @@ export default function RegisterPage() {
         { name, designation, phone, alt_phone: altPhone, password, password_confirmation: confirmPassword },
         { headers: { Authorization: `Bearer ${registrationToken}` } }
       );
-      router.push("/login?registered=1");
+      router.push("/company-profile");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
@@ -254,7 +254,9 @@ export default function RegisterPage() {
           <Typography sx={{ color: "#6B7280", fontSize: "0.83rem" }}>
             {step === 0
               ? "Verify your company email to get started. We'll send a 6-digit OTP."
-              : "Enter your recruiter details to finish setting up your account."}
+              : step === 1
+              ? "Enter your recruiter details to finish setting up your account."
+              : "Almost done — set up your company profile and start recruiting."}
           </Typography>
         </Box>
 

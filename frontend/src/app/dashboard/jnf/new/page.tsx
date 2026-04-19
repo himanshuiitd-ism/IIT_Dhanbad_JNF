@@ -30,8 +30,8 @@ import PdfUploadDialog from "@/components/PdfUploadDialog";
 import FormTracker from "@/components/FormTracker";
 
 // ─── Tokens ──────────────────────────────────────────────────────────
-const MAROON = "#570000";
-const RED    = "#800000";
+const MAROON = "#850000ff";
+const RED = "#b90000ff";
 const SURFACE = "#FBF8F8";
 const WHITE  = "#FFFFFF";
 const BORDER = "rgba(0,0,0,0.09)";
@@ -153,7 +153,7 @@ const initElig = () => {
   const out: Record<string, Record<string, { checked:boolean; cgpa:string; backlogs:boolean }>> = {};
   Object.entries(PROGRAMMES).forEach(([p,bs]) => {
     out[p] = {};
-    bs.forEach(b => { out[p][b] = { checked:false, cgpa:"7.0", backlogs:true }; });
+    bs.forEach(b => { out[p][b] = { checked:false, cgpa:"", backlogs:true }; });
   });
   return out;
 };
@@ -215,7 +215,7 @@ export default function JnfNewPage() {
 
   // ── STEP 4: Eligibility ──────────────────────────────────────────
   const [eligibility, setEligibility] = useState(initElig());
-  const [globalCgpa, setGlobalCgpa] = useState("7.5");
+  const [globalCgpa, setGlobalCgpa] = useState("");
   const [globalBacklogs, setGlobalBacklogs] = useState(false);
 
   const toggleBranch = (prog:string, b:string) =>
@@ -307,21 +307,63 @@ export default function JnfNewPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // ── Count filled fields for completion % ────────────────────────
+  // ── Load company profile from localStorage ───────────────────────
+  useEffect(() => {
+    const stored = localStorage.getItem("recruiter_company_profile");
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      setCompany((prev) => ({
+        ...prev,
+        company_name: parsed.company_name || prev.company_name,
+        website: parsed.website || prev.website,
+        postal_address: parsed.postal_address || prev.postal_address,
+        employees: parsed.employees || prev.employees,
+        sector: parsed.sector || prev.sector,
+        category: parsed.category || prev.category,
+        date_of_establishment: parsed.date_of_establishment || prev.date_of_establishment,
+        annual_turnover: parsed.annual_turnover || prev.annual_turnover,
+        linkedin: parsed.linkedin || prev.linkedin,
+        hq_country: parsed.hq_country || prev.hq_country,
+        nature_of_business: parsed.nature_of_business || prev.nature_of_business,
+        description: parsed.description || prev.description,
+      }));
+      if (parsed.industry_sectors?.length) setIndustrySectors(parsed.industry_sectors);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ── Count filled fields for completion % (synced with tracker) ──────────
+  // NOTE: We derive completionPct from trackerSections so dashboard % and
+  // form tracker % always show the same value.
+  // completionPct is computed AFTER trackerSections below, so we use a
+  // separate simple tally here that mirrors exactly the tracker fields.
   const completionPct = useMemo(() => {
     let filled = 0; let total = 0;
-    const check = (v: any) => { total++; if (v && String(v).trim()) filled++; };
+    const check = (v: any) => {
+      total++;
+      if (v && String(v).trim() && v !== false) filled++;
+    };
+    // Company (auto-filled from profile — include in total but it's always counted)
     Object.values(company).forEach(check);
-    [headTA.name, headTA.email, poc1.name, poc1.email].forEach(check);
-    [job.job_title, job.place_of_posting, job.work_mode, job.expected_hires, job.joining_month].forEach(check);
-    check(globalCgpa);
+    // Contact
+    [headTA.name, headTA.email, headTA.phone, poc1.name, poc1.email, poc1.phone].forEach(check);
+    // Job
+    [job.job_title, job.place_of_posting, job.work_mode, job.expected_hires, job.joining_month, job.job_description].forEach(check);
+    // Skills — only filled if at least one tag added
+    total++; if (skills.length > 0) filled++;
+    // Eligibility — only filled if globalCgpa is explicitly set
+    total++; if (globalCgpa.trim()) filled++;
+    // Salary
     check(currency);
     SALARY_PROGS.forEach(p => check(salary[p]?.ctc));
+    // Selection
     check(selectionMode);
+    // Declaration
     check(signatoryName);
     check(typedSignature);
+    total++; if (declarations.every(Boolean)) filled++;
     return total ? Math.round((filled / total) * 100) : 0;
-  }, [company, headTA, poc1, job, globalCgpa, currency, salary, selectionMode, signatoryName, typedSignature]);
+  }, [company, headTA, poc1, job, skills, globalCgpa, currency, salary, selectionMode, signatoryName, typedSignature, declarations]);
 
   // ── Auto-save to localStorage ────────────────────────────────────
   useDraft(
@@ -363,7 +405,9 @@ export default function JnfNewPage() {
     };
 
     return [
-      mkSection(0, "Company Profile", [
+      // Company Profile is displayed as a banner (not a form step).
+      // stepIndex: -1 so tracker never highlights it as "current step".
+      mkSection(-1, "Company Profile", [
         f("company.company_name", "Company Name", company.company_name),
         f("company.website", "Website", company.website),
         f("company.postal_address", "Postal Address", company.postal_address),
@@ -375,7 +419,7 @@ export default function JnfNewPage() {
         f("company.description", "Description", company.description),
         f("industry_sectors", "Industry Sectors", industrySectors),
       ]),
-      mkSection(1, "Contact & HR", [
+      mkSection(0, "Contact & HR", [
         f("head_ta.name", "Head TA - Name", headTA.name),
         f("head_ta.email", "Head TA - Email", headTA.email),
         f("head_ta.phone", "Head TA - Phone", headTA.phone),
@@ -383,33 +427,37 @@ export default function JnfNewPage() {
         f("poc1.email", "PoC 1 - Email", poc1.email),
         f("poc1.phone", "PoC 1 - Phone", poc1.phone),
       ]),
-      mkSection(2, "Job Profile", [
+      mkSection(1, "Job Profile", [
         f("job.job_title", "Job Title", job.job_title),
         f("job.place_of_posting", "Place of Posting", job.place_of_posting),
         f("job.work_mode", "Work Mode", job.work_mode),
         f("job.expected_hires", "Expected Hires", job.expected_hires),
         f("job.joining_month", "Joining Month", job.joining_month),
         f("job.job_description", "Job Description", job.job_description),
-        f("required_skills", "Skills", skills),
+        // Skills: only "filled" if at least one tag is added
+        { key: "required_skills", label: "Skills", status: skills.length > 0 ? "filled" as FieldStatus : "empty" as FieldStatus, autoFilled: autoFilledKeys.has("required_skills") },
       ]),
-      mkSection(3, "Eligibility", [
-        f("eligibility.globalCgpa", "CGPA Cutoff", globalCgpa),
+      mkSection(2, "Eligibility", [
+        // CGPA: only "filled" if explicitly set (not default empty)
+        { key: "eligibility.globalCgpa", label: "CGPA Cutoff", status: globalCgpa.trim() ? "filled" as FieldStatus : "empty" as FieldStatus, autoFilled: autoFilledKeys.has("eligibility.globalCgpa") },
+        // Branches: only "filled" if at least one branch is checked
+        { key: "eligibility.branches", label: "Programmes / Branches", status: Object.values(eligibility).some(prog => Object.values(prog).some(b => b.checked)) ? "filled" as FieldStatus : "empty" as FieldStatus, autoFilled: false },
       ]),
-      mkSection(4, "Salary Details", [
+      mkSection(3, "Salary Details", [
         f("salary.currency", "Currency", currency),
         ...SALARY_PROGS.map(p => f(`salary.${p}.ctc`, `${p} CTC`, salary[p]?.ctc)),
       ]),
-      mkSection(5, "Selection Process", [
+      mkSection(4, "Selection Process", [
         f("selection.selection_mode", "Selection Mode", selectionMode),
         ...SELECTION_STAGES_LIST.map(s => f(`selection.${s.key}`, s.label.replace("\n", " "), stages[s.key])),
       ]),
-      mkSection(6, "Declaration", [
+      mkSection(5, "Declaration", [
         f("signatory_name", "Signatory Name", signatoryName),
         f("typed_signature", "Typed Signature", typedSignature),
-        f("declarations", "All Declarations", declarations.every(Boolean)),
+        { key: "declarations", label: "All Declarations", status: declarations.every(Boolean) ? "filled" as FieldStatus : "empty" as FieldStatus, autoFilled: false },
       ]),
     ];
-  }, [company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa, currency, salary, selectionMode, stages, signatoryName, typedSignature, declarations, autoFilledKeys]);
+  }, [company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa, eligibility, currency, salary, selectionMode, stages, signatoryName, typedSignature, declarations, autoFilledKeys]);
 
   // ── PDF Parse handler ───────────────────────────────────────────
   const handlePdfParse = useCallback(async (file: File, onProgress: (s: string) => void) => {
@@ -552,7 +600,7 @@ export default function JnfNewPage() {
 
   // ─────────────────────────────────────────────────────────────────
   const STEPS = [
-    "Company Profile","Contact & HR","Job Profile",
+    "Contact & HR","Job Profile",
     "Eligibility","Salary Details","Selection Process",
     "Declaration","Review & Submit",
   ];
@@ -637,116 +685,46 @@ export default function JnfNewPage() {
       <Box sx={{ maxWidth:1100, mx:"auto", px:{xs:2,md:4}, py:3 }}>
         <InstitutionalHeader type="JNF" />
 
-        {/* ══════════════════ STEP 1: COMPANY PROFILE ══════════════════ */}
+        {/* ══ COMPANY PROFILE BANNER (auto-filled, read-only) ══════════ */}
+        {(() => {
+          const stored = typeof window !== "undefined" ? localStorage.getItem("recruiter_company_profile") : null;
+          const cp = stored ? JSON.parse(stored) : null;
+          return cp ? (
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 3 }}>
+              <Box sx={{ bgcolor: "rgba(134,0,0,0.06)", px: 3, py: 1.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <CheckCircleOutlineIcon sx={{ color: MAROON, fontSize: 18 }} />
+                  <Typography sx={{ fontWeight: 800, color: MAROON, fontSize: "0.82rem", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                    Company Profile — Auto-filled
+                  </Typography>
+                </Box>
+                <Button
+                  href="/company-profile"
+                  startIcon={<EditIcon sx={{ fontSize: 14 }} />}
+                  sx={{ color: MAROON, fontWeight: 700, fontSize: "0.72rem", textTransform: "none", bgcolor: "rgba(134,0,0,0.06)", borderRadius: 1.5, px: 2, py: 0.5, "&:hover": { bgcolor: "rgba(134,0,0,0.12)" } }}
+                >
+                  Edit Company Profile
+                </Button>
+              </Box>
+              <Box sx={{ px: 3, py: 2, display: "flex", gap: 4, flexWrap: "wrap" }}>
+                {[{ l: "Company", v: cp.company_name }, { l: "Website", v: cp.website }, { l: "Sector", v: cp.sector }, { l: "Category", v: cp.category }, { l: "Employees", v: cp.employees }].map(({ l, v }) =>
+                  v ? <Box key={l}>
+                    <Typography sx={{ fontSize: "0.65rem", color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" }}>{l}</Typography>
+                    <Typography sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#111827" }}>{v}</Typography>
+                  </Box> : null
+                )}
+              </Box>
+            </Paper>
+          ) : (
+            <Alert severity="warning" action={<Button href="/company-profile" size="small" sx={{ color: MAROON, fontWeight: 700 }}>Set Up Now</Button>} sx={{ mb: 3, fontSize: "0.8rem" }}>
+              Company profile not found. Please set it up before submitting.
+            </Alert>
+          );
+        })()}
+
+        {/* ══════════════════ STEP 1: CONTACT & HR ═════════════════════ */}
         {step === 0 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            {/* <SectionHeader title="COMPANY PROFILE" /> */}
-            <Box sx={{ p:3, display:"grid", gridTemplateColumns:{xs:"1fr",md:"1fr 1fr"}, gap:3 }}>
-              {/* Left: existing */}
-              <Box sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-                
-                {[["company_name","Company Name",true],["website","Website",true]] .map(([k,l,r]) => (
-                  <Box key={k as string}>
-                    <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                    <TextField fullWidth size="small" value={(company as any)[k as string]} onChange={e => setCompany(p => ({...p,[k as string]:e.target.value}))}
-                      InputProps={k==="website" ? { startAdornment:<InputAdornment position="start"><LinkIcon sx={{fontSize:15,color:"#9CA3AF"}} /></InputAdornment> } : undefined}
-                      sx={inputSx} />
-                  </Box>
-                ))}
-                <Box>
-                  <FieldLabel>Postal Address</FieldLabel>
-                  <TextField fullWidth size="small" multiline rows={2} value={company.postal_address} onChange={e => setCompany(p => ({...p,postal_address:e.target.value}))} sx={inputSx} />
-                </Box>
-                <Box>
-                  <FieldLabel>No. of Employees</FieldLabel>
-                  <Select fullWidth size="small" value={company.employees} onChange={e => setCompany(p => ({...p,employees:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
-                    <MenuItem value="" disabled><em>Select range</em></MenuItem>
-                    {["< 50","50–200","200–1,000","1,000–10,000","10,000+"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
-                  </Select>
-                </Box>
-                <Box>
-                  <FieldLabel required>Sector</FieldLabel>
-                  <Select fullWidth size="small" value={company.sector} onChange={e => setCompany(p=>({...p,sector:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
-                    <MenuItem value="" disabled><em>Select sector</em></MenuItem>
-                    {["Core Engineering","IT / Software","Consulting","Finance / BFSI","Research & Development","Government / PSU","Manufacturing","Analytics / Data Science","Energy & Power","FMCG","Healthcare / Pharma","Other"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
-                  </Select>
-                </Box>
-                {/* Logo */}
-                <Box>
-                  <FieldLabel required>Company Logo</FieldLabel>
-                  <Box component="label" htmlFor="logo-up" sx={{ display:"flex",alignItems:"center",gap:1.5,p:1.5,border:`1.5px dashed ${logoFile?MAROON:BORDER}`,borderRadius:1.5,cursor:"pointer",bgcolor:logoFile?"rgba(87,0,0,0.03)":SURFACE,"&:hover":{borderColor:MAROON} }}>
-                    <CloudUploadIcon sx={{fontSize:18,color:logoFile?MAROON:"#9CA3AF"}} />
-                    <Typography sx={{fontSize:"0.78rem",color:logoFile?MAROON:"#6B7280"}}>{logoFile?logoFile.name:"Upload logo (PNG/JPG · max 2 MB)"}</Typography>
-                    <input id="logo-up" type="file" accept="image/*" hidden onChange={e=>setLogoFile(e.target.files?.[0]||null)} />
-                  </Box>
-                </Box>
-                <Box component="label" htmlFor="pdf-up" sx={{display:"flex",alignItems:"center",justifyContent:"center",gap:1.5,p:1.5,bgcolor:"#14532D",color:WHITE,borderRadius:1.5,cursor:"pointer","&:hover":{bgcolor:"#166534"}}}>
-                  <CloudUploadIcon sx={{fontSize:18}} />
-                  <Typography sx={{fontWeight:800,fontSize:"0.8rem"}}>{pdfFile?pdfFile.name:"UPLOAD COMPANY BROCHURE / PDF"}</Typography>
-                  <input id="pdf-up" type="file" accept="application/pdf" hidden onChange={e=>setPdfFile(e.target.files?.[0]||null)} />
-                </Box>
-              </Box>
-
-              {/* Right: new additions */}
-              <Box sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-                
-                <Box>
-                  <FieldLabel>Category / Org Type</FieldLabel>
-                  <Select fullWidth size="small" value={company.category} onChange={e=>setCompany(p=>({...p,category:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
-                    <MenuItem value="" disabled><em>Select type</em></MenuItem>
-                    {["MNC","Indian Private","Indian Public (Listed)","PSU","Startup","Government / Defence","NGO","Research Institute","Other"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
-                  </Select>
-                </Box>
-                <Box>
-                  <FieldLabel>Date of Establishment</FieldLabel>
-                  <TextField fullWidth size="small" type="date" value={company.date_of_establishment} onChange={e=>setCompany(p=>({...p,date_of_establishment:e.target.value}))} sx={inputSx} />
-                </Box>
-                <Box>
-                  <FieldLabel>Annual Turnover (NIRF)</FieldLabel>
-                  <Select fullWidth size="small" value={company.annual_turnover} onChange={e=>setCompany(p=>({...p,annual_turnover:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
-                    <MenuItem value="" disabled><em>Select range</em></MenuItem>
-                    {["< ₹100 Crore","₹100–500 Crore","₹500–2,000 Crore","₹2,000–10,000 Crore","> ₹10,000 Crore","Not Disclosed"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
-                  </Select>
-                </Box>
-                <Box>
-                  <FieldLabel>Social Media / LinkedIn URL</FieldLabel>
-                  <TextField fullWidth size="small" value={company.linkedin} onChange={e=>setCompany(p=>({...p,linkedin:e.target.value}))} sx={inputSx} />
-                </Box>
-                {/* Sector tags */}
-                <Box>
-                  <FieldLabel>Industry Sector Tags</FieldLabel>
-                  <Box sx={{display:"flex",gap:1,mb:0.8}}>
-                    <TextField fullWidth size="small" placeholder="Add tag, press Enter" value={sectorInput} onChange={e=>setSectorInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(sectorInput.trim()&&!industrySectors.includes(sectorInput.trim())){setIndustrySectors(p=>[...p,sectorInput.trim()]);}setSectorInput("");}}} sx={inputSx} />
-                    <Button variant="contained" size="small" onClick={()=>{if(sectorInput.trim()){setIndustrySectors(p=>[...p,sectorInput.trim()]);setSectorInput("");}}} sx={{bgcolor:MAROON,color:WHITE,minWidth:36,"&:hover":{bgcolor:RED}}}><AddIcon sx={{fontSize:18}} /></Button>
-                  </Box>
-                  <Box sx={{display:"flex",flexWrap:"wrap",gap:0.5}}>
-                    {industrySectors.map(t=><Chip key={t} label={t} size="small" onDelete={()=>setIndustrySectors(p=>p.filter(x=>x!==t))} sx={{fontSize:"0.7rem",bgcolor:"rgba(87,0,0,0.07)",color:MAROON,fontWeight:700}} />)}
-                  </Box>
-                </Box>
-                <Box>
-                  <FieldLabel>If MNC — HQ Country / City</FieldLabel>
-                  <TextField fullWidth size="small" value={company.hq_country} onChange={e=>setCompany(p=>({...p,hq_country:e.target.value}))} sx={inputSx} />
-                </Box>
-                <Box>
-                  <FieldLabel>Nature of Business</FieldLabel>
-                  <Select fullWidth size="small" value={company.nature_of_business} onChange={e=>setCompany(p=>({...p,nature_of_business:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
-                    <MenuItem value="" disabled><em>Select</em></MenuItem>
-                    {["Product","Service","Product + Service","Consulting"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
-                  </Select>
-                </Box>
-                <Box>
-                  <FieldLabel>Company Description</FieldLabel>
-                  <TextField fullWidth size="small" multiline rows={4} inputProps={{maxLength:1000}} helperText={`${company.description.length}/1000`} value={company.description} onChange={e=>setCompany(p=>({...p,description:e.target.value}))} sx={inputSx} />
-                </Box>
-              </Box>
-            </Box>
-          </Paper>
-        )}
-
-        {/* ══════════════════ STEP 2: CONTACT & HR ═════════════════════ */}
-        {step === 1 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            {/* <SectionHeader title="CONTACT & HR DETAILS" /> */}
             <Box sx={{ p:3 }}>
               <Alert severity="info" sx={{ mb:2, fontSize:"0.75rem" }}>★ Landline per contact · All Primary Contact fields are mandatory.</Alert>
               <Box sx={{ display:"flex", gap:2, flexWrap:"wrap" }}>
@@ -775,7 +753,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 3: JOB PROFILE ═══════════════════════ */}
-        {step === 2 && (
+        {step === 1 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
             {/* <SectionHeader title="JOB PROFILE" /> */}
             <Box sx={{ p:3, display:"flex", flexDirection:"column", gap:2.5 }}>
@@ -835,7 +813,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 4: ELIGIBILITY ════════════════════════ */}
-        {step === 3 && (
+        {step === 2 && (
           <Box>
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2.5 }}>
               {/* <SectionHeader title="ELIGIBILITY & COURSES" /> */}
@@ -844,7 +822,7 @@ export default function JnfNewPage() {
                 <Typography sx={{ color:"rgba(255,255,255,0.45)",fontSize:"0.62rem",fontWeight:800,textTransform:"uppercase",letterSpacing:0.5 }}>Global Controls</Typography>
                 <Box sx={{ display:"flex", alignItems:"center", gap:1 }}>
                   <Typography sx={{ color:"rgba(255,255,255,0.7)", fontSize:"0.75rem",fontWeight:600 }}>Min CGPA:</Typography>
-                  <TextField size="small" value={globalCgpa} onChange={e=>setGlobalCgpa(e.target.value)} sx={{ width:70,"& .MuiOutlinedInput-root":{bgcolor:WHITE,borderRadius:1,fontSize:"0.85rem",fontWeight:800} }} />
+                  <TextField size="small" value={globalCgpa} onChange={e=>setGlobalCgpa(e.target.value)} placeholder="e.g. 6.5" inputProps={{ style:{textAlign:"center"} }} sx={{ width:80,"& .MuiOutlinedInput-root":{bgcolor:WHITE,borderRadius:1,fontSize:"0.85rem",fontWeight:800} }} />
                 </Box>
                 <Box sx={{ display:"flex", alignItems:"center", gap:1 }}>
                   <Typography sx={{ color:"rgba(255,255,255,0.7)", fontSize:"0.75rem",fontWeight:600 }}>Backlogs:</Typography>
@@ -876,7 +854,7 @@ export default function JnfNewPage() {
                       <Typography sx={{ fontSize:"0.58rem",fontWeight:800,color:"#9CA3AF",width:52,textAlign:"center",textTransform:"uppercase",letterSpacing:0.3 }}>Backlogs</Typography>
                     </Box>
                     {branches.map(b => {
-                      const d = eligibility[prog]?.[b] ?? { checked:false, cgpa:"7.0", backlogs:true };
+                      const d = eligibility[prog]?.[b] ?? { checked:false, cgpa:"", backlogs:true };
                       return (
                         <Box key={b} sx={{ display:"flex",alignItems:"center",gap:1,py:0.7,px:1.5,bgcolor:d.checked?"rgba(87,0,0,0.03)":WHITE,borderBottom:`1px solid ${BORDER}`,"&:last-child":{borderBottom:0} }}>
                           <Checkbox size="small" checked={d.checked} onChange={()=>toggleBranch(prog,b)} sx={{ color:MAROON,"&.Mui-checked":{color:MAROON},p:0.4 }} />
@@ -896,7 +874,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 5: SALARY ════════════════════════════ */}
-        {step === 4 && (
+        {step === 3 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
             {/* <SectionHeader title="SALARY DETAILS" /> */}
             <Box sx={{ p:3 }}>
@@ -948,7 +926,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 6: SELECTION PROCESS ═════════════════ */}
-        {step === 5 && (
+        {step === 4 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
             {/* <SectionHeader title="SELECTION PROCESS" /> */}
             <Box sx={{ p:3 }}>
@@ -1063,7 +1041,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 7: DECLARATION ════════════════════════ */}
-        {step === 6 && (
+        {step === 5 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
             {/* <SectionHeader title="DECLARATION & SUBMIT" /> */}
             <Box sx={{ p:3, display:"grid", gridTemplateColumns:{xs:"1fr",md:"1fr 1fr"}, gap:3 }}>
@@ -1118,7 +1096,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ══════════════════ STEP 8: REVIEW & CONFIRM ══════════════════ */}
-        {step === 7 && (
+        {step === 6 && (
           <Box>
             <Alert severity="info" sx={{ mb:2, fontSize:"0.78rem" }}>
               This is a read-only preview of your JNF. To make changes, click <strong>"← Go Back to Edit"</strong> and navigate to any step. Once confirmed, the form will be submitted.
@@ -1296,7 +1274,7 @@ export default function JnfNewPage() {
         )}
 
         {/* ── Navigation ─────────────────────────────────────────── */}
-        {step < 7 && (
+        {step < 6 && (
           <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"center", mt:3 }}>
             <Button variant="outlined" startIcon={<ArrowBackIcon/>} onClick={()=>setStep(s=>s-1)} disabled={step===0}
               sx={{ textTransform:"none",color:MAROON,borderColor:MAROON,fontWeight:700,"&:hover":{bgcolor:"rgba(87,0,0,0.04)"} }}>
@@ -1305,9 +1283,9 @@ export default function JnfNewPage() {
             <Typography sx={{ fontSize:"0.7rem",color:"#9CA3AF",fontWeight:600 }}>Step {step+1} of {STEPS.length}</Typography>
             <Button variant="contained" endIcon={saving?<CircularProgress size={14} sx={{color:WHITE}}/>:<ArrowForwardIcon/>}
               onClick={step===6?handleNext:handleNext}
-              disabled={saving||(step===6&&!allDeclared)}
+              disabled={saving||(step===5&&!allDeclared)}
               sx={{ textTransform:"none",bgcolor:MAROON,color:WHITE,fontWeight:800,px:3,"&:hover":{bgcolor:RED} }}>
-              {saving?"Saving…":step===6?"Save & Review":"Save & Continue"}
+              {saving?"Saving…":step===5?"Save & Review":"Save & Continue"}
             </Button>
           </Box>
         )}

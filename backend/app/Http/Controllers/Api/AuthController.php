@@ -237,4 +237,24 @@ class AuthController extends Controller
 
         return response()->json(['user' => $user, 'token' => $token], 201);
     }
+
+    // ─────────────────────────────────────────────────────────────────
+    //  NOTIFICATIONS
+    // ─────────────────────────────────────────────────────────────────
+    public function getNotifications(Request $request)
+    {
+        $notifications = Notification::where('user_id', Auth::id())
+            ->orderBy('created_at', 'desc')
+            ->get();
+        return response()->json($notifications);
+    }
+
+    public function markNotificationsRead(Request $request)
+    {
+        Notification::where('user_id', Auth::id())
+            ->where('is_read', false)
+            ->update(['is_read' => true]);
+
+        return response()->json(['message' => 'Notifications marked as read']);
+    }
 }

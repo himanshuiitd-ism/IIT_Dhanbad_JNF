@@ -32,8 +32,8 @@ import PdfUploadDialog from "@/components/PdfUploadDialog";
 import FormTracker from "@/components/FormTracker";
 
 // ─── Design Tokens ────────────────────────────────────────────────────
-const MAROON  = "#570000";
-const RED     = "#800000";
+const MAROON = "#850000ff";
+const RED = "#b90000ff";
 const SURFACE = "#FBF8F8";
 const WHITE   = "#FFFFFF";
 const BORDER  = "rgba(0,0,0,0.09)";

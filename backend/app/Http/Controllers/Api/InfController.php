@@ -84,6 +84,23 @@ class InfController extends Controller
             'edit_count' => $editCount
         ]));
 
+        // --- NEW: Notify Admins ---
+        try {
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id'   => $admin->id,
+                    'type'      => 'system',
+                    'title'     => 'New INF Submitted',
+                    'message'   => "{$user->organisation} has submitted a new INF: {$inf->job_title}",
+                    'form_type' => 'inf',
+                    'form_id'   => $inf->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Admin notification failed: ' . $e->getMessage());
+        }
+
         return response()->json(['message' => 'INF submitted successfully.']);
     }
 }

@@ -60,10 +60,11 @@ import MarkEmailReadIcon from "@mui/icons-material/MarkEmailRead";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
+import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
 
 // ─── Design Tokens ────────────────────────────────────────────
-const MAROON = "#570000";
-const RED = "#800000";
+const MAROON = "#850000ff";
+const RED = "#b90000ff";
 const RED_ACCENT = "#C41230";
 const SURFACE = "#FBF8F8";
 const WHITE = "#FFFFFF";
@@ -114,6 +115,96 @@ const StatusChip = ({ status }: { status: string }) => {
   );
 };
 
+// ─── Recruiter Notification Panel (inline, shares dashboard sidebar) ─────
+const NOTIF_TYPES: Record<string, { color: string; bg: string; label: string }> = {
+  approval:      { color: "#059669", bg: "#D1FAE5", label: "Approved" },
+  rejection:     { color: "#DC2626", bg: "#FEE2E2", label: "Rejected" },
+  status_update: { color: "#2563EB", bg: "#DBEAFE", label: "Status Update" },
+  edit_request:  { color: "#D97706", bg: "#FEF3C7", label: "Edit Requested" },
+  email:         { color: "#7C3AED", bg: "#EDE9FE", label: "Message" },
+  system:        { color: "#6B7280", bg: "#F3F4F6", label: "System" },
+};
+
+function RecruiterNotifPanel({ token }: { token: string }) {
+  const [notifs, setNotifs] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!token) { setLoading(false); return; }
+    axios.get("http://localhost:8000/api/notifications", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then(r => setNotifs(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  if (loading) return (
+    <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
+      <CircularProgress sx={{ color: MAROON }} size={28} />
+    </Box>
+  );
+
+  return (
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+      {notifs.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 6, textAlign: "center", border: `1px solid ${BORDER}`, borderRadius: 3 }}>
+          <Box sx={{ fontSize: 40, mb: 1 }}>🔔</Box>
+          <Typography sx={{ fontWeight: 700, color: "#6B7280", fontSize: "0.88rem" }}>
+            No notifications yet
+          </Typography>
+          <Typography sx={{ color: "#9CA3AF", fontSize: "0.75rem", mt: 0.5 }}>
+            Approval decisions and admin messages will appear here.
+          </Typography>
+        </Paper>
+      ) : (
+        notifs.map((n) => {
+          const cfg = NOTIF_TYPES[n.type] || NOTIF_TYPES.system;
+          return (
+            <Paper
+              key={n.id}
+              variant="outlined"
+              sx={{
+                p: 2.5, border: `1px solid ${BORDER}`, borderRadius: 2.5,
+                bgcolor: n.is_read ? WHITE : `${cfg.color}05`,
+                borderLeft: `4px solid ${n.is_read ? BORDER : cfg.color}`,
+                transition: "background 0.15s",
+              }}
+            >
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 1, mb: 0.5 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                  <Typography sx={{ fontWeight: n.is_read ? 600 : 800, fontSize: "0.88rem", color: "#111827" }}>
+                    {n.title || cfg.label}
+                  </Typography>
+                  <Box sx={{ px: 1, py: 0.2, borderRadius: 10, bgcolor: cfg.bg }}>
+                    <Typography sx={{ fontSize: "0.62rem", fontWeight: 800, color: cfg.color, textTransform: "uppercase" }}>
+                      {cfg.label}
+                    </Typography>
+                  </Box>
+                  {!n.is_read && (
+                    <Box sx={{ width: 7, height: 7, borderRadius: "50%", bgcolor: MAROON, flexShrink: 0 }} />
+                  )}
+                </Box>
+                <Typography sx={{ fontSize: "0.65rem", color: "#9CA3AF", whiteSpace: "nowrap", flexShrink: 0 }}>
+                  {new Date(n.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                </Typography>
+              </Box>
+              <Typography sx={{ fontSize: "0.8rem", color: "#4B5563", lineHeight: 1.65 }}>
+                {n.message}
+              </Typography>
+              {n.form_type && n.form_id && (
+                <Typography sx={{ fontSize: "0.68rem", color: "#9CA3AF", mt: 0.75 }}>
+                  Re: {n.form_type.toUpperCase()} Form #{n.form_id}
+                </Typography>
+              )}
+            </Paper>
+          );
+        })
+      )}
+    </Box>
+  );
+}
+
 export default function DashboardPage() {
   const { data: session }: any = useSession();
   const router = useRouter();
@@ -125,6 +216,9 @@ export default function DashboardPage() {
   const [editRequests, setEditRequests] = useState<EditRequest[]>([]);
   const [myEditRequests, setMyEditRequests] = useState<EditRequest[]>([]);
   const [drafts, setDrafts] = useState<DraftMeta[]>([]);
+
+  // ── Notification state ────────────────────────────────────────
+  const [notifCount, setNotifCount] = useState(0);
 
   // Contact form state
   const [msgSubject, setMsgSubject] = useState("");
@@ -143,7 +237,10 @@ export default function DashboardPage() {
   const [adminNote, setAdminNote] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
 
-  const userRole = session?.user?.role || "recruiter";
+  const localRole = typeof window !== "undefined" ? localStorage.getItem("local_user_role") : null;
+  const localName = typeof window !== "undefined" ? localStorage.getItem("local_user_name") : null;
+  const userRole = session?.user?.role || localRole || "recruiter";
+  const displayName = session?.user?.name || localName || "Partner";
   const pendingAdminCount = editRequests.filter(r => r.status === "pending").length;
 
   const fetchData = useCallback(async () => {
@@ -167,9 +264,28 @@ export default function DashboardPage() {
         setMyEditRequests(res.data);
       }
     } catch { /* silent */ }
+
+    // Fetch unread notification count for recruiter
+    if (userRole === "recruiter") {
+      try {
+        const nRes = await axios.get("http://localhost:8000/api/notifications");
+        setNotifCount(nRes.data.filter((n: any) => !n.is_read).length);
+      } catch { /* silent */ }
+    }
   }, [userRole]);
 
   useEffect(() => { if (session) fetchData(); }, [session, fetchData]);
+
+  // Poll notifications every 30s
+  useEffect(() => {
+    if (!session || userRole !== "recruiter") return;
+    const iv = setInterval(() => {
+      axios.get("http://localhost:8000/api/notifications")
+        .then(r => setNotifCount(r.data.filter((n: any) => !n.is_read).length))
+        .catch(() => {});
+    }, 30000);
+    return () => clearInterval(iv);
+  }, [session, userRole]);
 
   // Load local drafts
   useEffect(() => {
@@ -256,6 +372,14 @@ export default function DashboardPage() {
         ? <Badge badgeContent={pendingAdminCount} color="error" sx={{ "& .MuiBadge-badge": { fontSize: "0.6rem", height: 16, minWidth: 16 } }}><AssignmentIcon sx={{ fontSize: 18 }} /></Badge>
         : <AssignmentIcon sx={{ fontSize: 18 }} />,
     },
+    {
+      label: "Notifications",
+      icon: (
+        <Badge badgeContent={notifCount} color="error" sx={{ "& .MuiBadge-badge": { fontSize: "0.6rem", height: 16, minWidth: 16 } }}>
+          <NotificationsRoundedIcon sx={{ fontSize: 18 }} />
+        </Badge>
+      ),
+    },
     { label: "Policies", icon: <SettingsIcon sx={{ fontSize: 18 }} /> },
   ];
 
@@ -275,11 +399,29 @@ export default function DashboardPage() {
       </Box>
 
       <List sx={{ px: 1, py: 0 }}>
-        {navItems.map((item, idx) => (
+        {navItems.map((item: any, idx) => (
           <Box key={item.label}>
             <ListItem disablePadding sx={{ mb: 0.5 }}>
               <ListItemButton
-                onClick={() => setActiveTab(item.label)}
+                onClick={() => {
+                  if (item.label === "Notifications") {
+                    setActiveTab("Notifications");
+                    // Mark all read when opening notifications tab
+                    const token =
+                      (session as any)?.accessToken ||
+                      localStorage.getItem("local_token") ||
+                      "";
+                    if (token) {
+                      axios.post("http://localhost:8000/api/notifications/read", {}, {
+                        headers: { Authorization: `Bearer ${token}` }
+                      }).then(() => setNotifCount(0)).catch(() => {});
+                    } else {
+                      setNotifCount(0);
+                    }
+                    return;
+                  }
+                  setActiveTab(item.label);
+                }}
                 sx={{
                   borderRadius: 2, py: 1.2,
                   bgcolor: activeTab === item.label ? "rgba(87,0,0,0.06)" : "transparent",
@@ -369,18 +511,32 @@ export default function DashboardPage() {
               CDC <Typography component="span" sx={{ color: "#9CA3AF", fontSize: "0.8rem", fontWeight: 500 }}>Placement Portal</Typography>
             </Typography>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+              {/* Notification Bell (Recruiter only) */}
+              {userRole === "recruiter" && (
+                <Tooltip title="Notifications">
+                  <IconButton
+                    size="small"
+                    onClick={() => router.push("/dashboard/notifications")}
+                    sx={{ color: "#6B7280", "&:hover": { color: MAROON } }}
+                  >
+                    <Badge badgeContent={notifCount} color="error" sx={{ "& .MuiBadge-badge": { fontSize: "0.55rem", height: 14, minWidth: 14 } }}>
+                      <NotificationsRoundedIcon sx={{ fontSize: 20 }} />
+                    </Badge>
+                  </IconButton>
+                </Tooltip>
+              )}
               <Box sx={{ textAlign: "right" }}>
                 <Typography sx={{ fontWeight: 700, color: "#111827", fontSize: "0.78rem", lineHeight: 1.1 }}>
-                  {session?.user?.name || "Partner"}
+                  {displayName}
                 </Typography>
                 <Typography sx={{ color: RED_ACCENT, fontSize: "0.6rem", fontWeight: 700, textTransform: "uppercase" }}>
                   {userRole}
                 </Typography>
               </Box>
               <Avatar sx={{ bgcolor: MAROON, width: 30, height: 30, fontSize: "0.75rem" }}>
-                {session?.user?.name?.[0] || "C"}
+                {displayName?.[0] || "C"}
               </Avatar>
-              <IconButton size="small" onClick={() => signOut()}><LogoutIcon sx={{ fontSize: 18, color: "#9CA3AF" }} /></IconButton>
+              <IconButton size="small" onClick={() => { localStorage.removeItem("local_user_role"); localStorage.removeItem("local_user_name"); localStorage.removeItem("local_user_email"); signOut({ callbackUrl: "/" }); }}><LogoutIcon sx={{ fontSize: 18, color: "#9CA3AF" }} /></IconButton>
             </Box>
           </Toolbar>
         </AppBar>
@@ -571,6 +727,41 @@ export default function DashboardPage() {
 
                 {/* ── Right: Sidebar Widgets ─────────────────────────────── */}
                 <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  {/* Company Profile Card (Recruiter) */}
+                  {userRole === "recruiter" && (() => {
+                    const cp = typeof window !== "undefined" ? localStorage.getItem("recruiter_company_profile") : null;
+                    const profile = cp ? JSON.parse(cp) : null;
+                    return (
+                      <Paper sx={{ p: 2, border: `1px solid ${BORDER}`, borderRadius: 1.5, borderLeft: `4px solid ${MAROON}` }}>
+                        <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                          <Typography sx={{ fontWeight: 800, fontSize: "0.78rem", display: "flex", alignItems: "center", gap: 0.75, color: MAROON }}>
+                            <BusinessCenterIcon sx={{ fontSize: 14 }} /> Company Profile
+                          </Typography>
+                          <Button href="/company-profile" size="small" startIcon={<EditIcon sx={{ fontSize: 12 }} />}
+                            sx={{ fontSize: "0.64rem", color: MAROON, textTransform: "none", fontWeight: 700, px: 1, py: 0.3, bgcolor: "rgba(134,0,0,0.06)", borderRadius: 1.5, "&:hover": { bgcolor: "rgba(134,0,0,0.12)" } }}>
+                            Edit
+                          </Button>
+                        </Box>
+                        {profile ? (
+                          <>
+                            <Typography sx={{ fontWeight: 700, fontSize: "0.82rem", color: "#111827", mb: 0.3 }}>{profile.company_name}</Typography>
+                            <Typography sx={{ fontSize: "0.68rem", color: "#6B7280" }}>{profile.sector} · {profile.category || "—"}</Typography>
+                            <Chip label="Profile Complete" size="small" icon={<CheckCircleIcon sx={{ fontSize: "12px !important" }} />}
+                              sx={{ mt: 1, fontSize: "0.6rem", height: 18, bgcolor: "rgba(5,150,105,0.08)", color: "#059669", fontWeight: 700, border: "1px solid rgba(5,150,105,0.2)" }} />
+                          </>
+                        ) : (
+                          <>
+                            <Typography sx={{ fontSize: "0.72rem", color: "#6B7280", mb: 1 }}>No profile set up yet. Add your company details to auto-fill JNF/INF forms.</Typography>
+                            <Button href="/company-profile" variant="contained" size="small" fullWidth
+                              sx={{ bgcolor: MAROON, color: WHITE, fontWeight: 700, textTransform: "none", fontSize: "0.72rem", borderRadius: 1.5 }}>
+                              Set Up Company Profile →
+                            </Button>
+                          </>
+                        )}
+                      </Paper>
+                    );
+                  })()}
+
                   {/* My Edit Requests status (Recruiter) */}
                   {userRole === "recruiter" && myEditRequests.length > 0 && (
                     <Paper sx={{ p: 2, border: `1px solid ${BORDER}`, borderRadius: 1.5 }}>
@@ -803,6 +994,23 @@ export default function DashboardPage() {
                   </Grid>
                 )}
               </Grid>
+            </Box>
+          )}
+
+
+          {/* ── NOTIFICATIONS TAB ─────────────────────────────────── */}
+          {activeTab === "Notifications" && (
+            <Box>
+              <Box sx={{ mb: 3, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Box>
+                  <Typography sx={{ fontWeight: 900, fontSize: "1.35rem", color: MAROON }}>Notifications</Typography>
+                  <Typography sx={{ color: "#6B7280", fontSize: "0.8rem", mt: 0.3 }}>
+                    Messages and alerts from the CDC Placement Office
+                  </Typography>
+                </Box>
+              </Box>
+
+              <RecruiterNotifPanel token={(session as any)?.accessToken || localStorage.getItem("local_token") || ""} />
             </Box>
           )}
 

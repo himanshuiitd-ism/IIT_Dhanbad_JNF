@@ -135,6 +135,23 @@ class JnfController extends Controller
         // Send confirmation email to the recruiter
         $this->sendConfirmationEmail($jnf, $user);
 
+        // --- NEW: Notify Admins ---
+        try {
+            $admins = \App\Models\User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                \App\Models\Notification::create([
+                    'user_id'   => $admin->id,
+                    'type'      => 'system',
+                    'title'     => 'New JNF Submitted',
+                    'message'   => "{$user->organisation} has submitted a new JNF: {$jnf->job_title}",
+                    'form_type' => 'jnf',
+                    'form_id'   => $jnf->id,
+                ]);
+            }
+        } catch (\Throwable $e) {
+            \Log::warning('Admin notification failed: ' . $e->getMessage());
+        }
+
         return response()->json([
             'message' => 'JNF submitted successfully. Confirmation email sent.',
             'data'    => $jnf->load('user'),
