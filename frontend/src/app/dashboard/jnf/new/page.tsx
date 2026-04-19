@@ -1,13 +1,15 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useDraft, loadDraft, clearDraft } from "@/lib/use-draft";
+import Image from "next/image";
 import {
   Box, Typography, TextField, Button, Checkbox, FormControlLabel, MenuItem,
   Select, Chip, Paper, Stepper, Step, StepLabel, Divider, IconButton,
   Alert, InputAdornment, Accordion, AccordionSummary, AccordionDetails,
   FormControl, InputLabel, Switch, Dialog, DialogTitle, DialogContent,
-  DialogActions, CircularProgress, Snackbar,
+  DialogActions, CircularProgress, Snackbar, Tooltip,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -19,6 +21,13 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import LinkIcon from "@mui/icons-material/Link";
 import EditIcon from "@mui/icons-material/Edit";
 import SendIcon from "@mui/icons-material/Send";
+import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+
+// ─── AI Parser ───────────────────────────────────────────────────────
+import { parsePdf, applyJnfParsedData } from "@/lib/ai-parser";
+import type { JnfParsedData, TrackerSection, TrackerField, FieldStatus } from "@/lib/ai-parser/types";
+import PdfUploadDialog from "@/components/PdfUploadDialog";
+import FormTracker from "@/components/FormTracker";
 
 // ─── Tokens ──────────────────────────────────────────────────────────
 const MAROON = "#570000";
@@ -44,14 +53,32 @@ const FieldLabel = ({ children, required }: { children: string; required?: boole
   </Typography>
 );
 
-const SectionHeader = ({ step, title, extra }: { step: string; title: string; extra?: React.ReactNode }) => (
+const SectionHeader = ({ title, extra }: { title: string; extra?: React.ReactNode }) => (
   <Box sx={{ bgcolor: MAROON, px: 3, py: 1.8, borderRadius: "8px 8px 0 0", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-    <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-      <Typography sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 900, fontSize: "1rem" }}>{step}</Typography>
-      <Box sx={{ width: "1px", height: 22, bgcolor: "rgba(255,255,255,0.2)", flexShrink: 0 }} />
-      <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: "1rem", letterSpacing: 0.5 }}>{title}</Typography>
-    </Box>
+    <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: "1rem", letterSpacing: 0.5 }}>{title}</Typography>
     {extra}
+  </Box>
+);
+
+const InstitutionalHeader = ({ type }: { type: "JNF" | "INF" }) => (
+  <Box sx={{ bgcolor: WHITE, border: `1px solid ${BORDER}`, borderRadius: 2, p: 3, mb: 3, display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}>
+    <Box sx={{ position: "absolute", left: 24, display: "flex", alignItems: "center" }}>
+      <Image src="/logo.png" alt="IIT (ISM) Dhanbad" width={80} height={80} priority />
+    </Box>
+    <Box sx={{ textAlign: "center" }}>
+      <Typography variant="h5" sx={{ fontWeight: 900, color: MAROON, letterSpacing: 1, mb: 0.5 }}>
+        CAREER DEVELOPMENT CENTRE
+      </Typography>
+      <Typography variant="h6" sx={{ fontWeight: 800, color: "#374151", letterSpacing: 0.5, mb: 1 }}>
+        INDIAN INSTITUTE OF TECHNOLOGY (INDIAN SCHOOL OF MINES) DHANBAD
+      </Typography>
+      <Box sx={{ width: 100, height: 3, bgcolor: MAROON, mx: "auto", mb: 1.5 }} />
+      <Box sx={{ display: "flex", justifyContent: "center" }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: 900, color: WHITE, bgcolor: MAROON, px: 3, py: 0.5, borderRadius: 1, textTransform: "uppercase", letterSpacing: 2 }}>
+          {type === "JNF" ? "Job Notification Form (JNF)" : "Internship Notification Form (INF)"}
+        </Typography>
+      </Box>
+    </Box>
   </Box>
 );
 
@@ -147,12 +174,14 @@ const API = "http://localhost:8000/api";
 // ═══════════════════════════════════════════════════════════════════
 export default function JnfNewPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
   const [jnfId, setJnfId] = useState<number|null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [toast, setToast] = useState<{open:boolean;msg:string;type:"success"|"error"}>({ open:false, msg:"", type:"success" });
   const [backDialog, setBackDialog] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
 
   const showToast = (msg: string, type: "success"|"error" = "success") =>
     setToast({ open:true, msg, type });
@@ -228,6 +257,188 @@ export default function JnfNewPage() {
   const [typedSignature, setTypedSignature] = useState("");
   const [rtiNirf, setRtiNirf] = useState(false);
   const allDeclared = declarations.every(Boolean) && !!signatoryName && !!typedSignature;
+
+  // ── AI PDF Parser state ─────────────────────────────────────────
+  const [pdfDialogOpen, setPdfDialogOpen] = useState(false);
+  const [autoFilledKeys, setAutoFilledKeys] = useState<Set<string>>(new Set());
+  const [trackerOpen, setTrackerOpen] = useState(false);
+
+  // ── Draft: restore from localStorage on mount ────────────────────
+  useEffect(() => {
+    const resume = searchParams.get("resume");
+    if (resume === "1" && !draftLoaded) {
+      const saved = loadDraft("jnf");
+      if (saved) {
+        const d = saved.data;
+        if (d.company)           setCompany(d.company);
+        if (d.industrySectors)   setIndustrySectors(d.industrySectors);
+        if (d.headTA)            setHeadTA(d.headTA);
+        if (d.poc1)              setPoc1(d.poc1);
+        if (d.poc2)              setPoc2(d.poc2);
+        if (d.job)               setJob(d.job);
+        if (d.skills)            setSkills(d.skills);
+        if (d.globalCgpa)        setGlobalCgpa(d.globalCgpa);
+        if (d.globalBacklogs !== undefined) setGlobalBacklogs(d.globalBacklogs);
+        if (d.currency)          setCurrency(d.currency);
+        if (d.salary)            setSalary(d.salary);
+        if (d.additionalSalary)  setAdditionalSalary(d.additionalSalary);
+        if (d.stages)            setStages(d.stages);
+        if (d.selectionMode)     setSelectionMode(d.selectionMode);
+        if (d.testType)          setTestType(d.testType);
+        if (d.interviewModes)    setInterviewModes(d.interviewModes);
+        if (d.psychometricTest !== undefined) setPsychometricTest(d.psychometricTest);
+        if (d.medicalTest !== undefined)      setMedicalTest(d.medicalTest);
+        if (d.otherScreening)    setOtherScreening(d.otherScreening);
+        if (d.infrastructure)    setInfrastructure(d.infrastructure);
+        if (d.testRounds)        setTestRounds(d.testRounds);
+        if (d.interviewRounds)   setInterviewRounds(d.interviewRounds);
+        if (d.declarations)      setDeclarations(d.declarations);
+        if (d.signatoryName)     setSignatoryName(d.signatoryName);
+        if (d.signatoryDesignation) setSignatoryDesignation(d.signatoryDesignation);
+        if (d.signatoryDate)     setSignatoryDate(d.signatoryDate);
+        if (d.typedSignature)    setTypedSignature(d.typedSignature);
+        if (d.rtiNirf !== undefined) setRtiNirf(d.rtiNirf);
+        if (d.jnfId)             setJnfId(d.jnfId);
+        setStep(saved.meta.step || 0);
+        showToast("Draft restored — continue from where you left off ✓");
+      }
+      setDraftLoaded(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams]);
+
+  // ── Count filled fields for completion % ────────────────────────
+  const completionPct = useMemo(() => {
+    let filled = 0; let total = 0;
+    const check = (v: any) => { total++; if (v && String(v).trim()) filled++; };
+    Object.values(company).forEach(check);
+    [headTA.name, headTA.email, poc1.name, poc1.email].forEach(check);
+    [job.job_title, job.place_of_posting, job.work_mode, job.expected_hires, job.joining_month].forEach(check);
+    check(globalCgpa);
+    check(currency);
+    SALARY_PROGS.forEach(p => check(salary[p]?.ctc));
+    check(selectionMode);
+    check(signatoryName);
+    check(typedSignature);
+    return total ? Math.round((filled / total) * 100) : 0;
+  }, [company, headTA, poc1, job, globalCgpa, currency, salary, selectionMode, signatoryName, typedSignature]);
+
+  // ── Auto-save to localStorage ────────────────────────────────────
+  useDraft(
+    "jnf",
+    { company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa,
+      globalBacklogs, currency, salary, additionalSalary, stages, selectionMode,
+      testType, interviewModes, psychometricTest, medicalTest, otherScreening,
+      infrastructure, testRounds, interviewRounds, declarations,
+      signatoryName, signatoryDesignation, signatoryDate, typedSignature,
+      rtiNirf, jnfId },
+    { formType: "jnf", title: company.company_name || "Untitled JNF", step, completion: completionPct, id: jnfId },
+  );
+
+  // ── Tracker computation ─────────────────────────────────────────
+  const trackerSections: TrackerSection[] = useMemo(() => {
+    const f = (key: string, label: string, value: any): TrackerField => {
+      let status: FieldStatus = "empty";
+      if (typeof value === "string" && value.trim()) status = "filled";
+      else if (typeof value === "number" && value > 0) status = "filled";
+      else if (typeof value === "boolean") status = value ? "filled" : "empty";
+      else if (Array.isArray(value) && value.length > 0) status = "filled";
+      else if (value && typeof value === "object") {
+        const vals = Object.values(value);
+        const filled = vals.filter((v: any) => v && String(v).trim()).length;
+        if (filled === vals.length) status = "filled";
+        else if (filled > 0) status = "partial";
+      }
+      return { key, label, status, autoFilled: autoFilledKeys.has(key) };
+    };
+
+    const mkSection = (stepIndex: number, stepName: string, fields: TrackerField[]): TrackerSection => {
+      const filledCount = fields.filter(fi => fi.status === "filled").length;
+      return {
+        stepIndex, stepName, fields,
+        filledCount,
+        totalCount: fields.length,
+        percentage: fields.length ? Math.round((filledCount / fields.length) * 100) : 0,
+      };
+    };
+
+    return [
+      mkSection(0, "Company Profile", [
+        f("company.company_name", "Company Name", company.company_name),
+        f("company.website", "Website", company.website),
+        f("company.postal_address", "Postal Address", company.postal_address),
+        f("company.employees", "Employees", company.employees),
+        f("company.sector", "Sector", company.sector),
+        f("company.category", "Category", company.category),
+        f("company.date_of_establishment", "Date of Establishment", company.date_of_establishment),
+        f("company.linkedin", "LinkedIn", company.linkedin),
+        f("company.description", "Description", company.description),
+        f("industry_sectors", "Industry Sectors", industrySectors),
+      ]),
+      mkSection(1, "Contact & HR", [
+        f("head_ta.name", "Head TA - Name", headTA.name),
+        f("head_ta.email", "Head TA - Email", headTA.email),
+        f("head_ta.phone", "Head TA - Phone", headTA.phone),
+        f("poc1.name", "PoC 1 - Name", poc1.name),
+        f("poc1.email", "PoC 1 - Email", poc1.email),
+        f("poc1.phone", "PoC 1 - Phone", poc1.phone),
+      ]),
+      mkSection(2, "Job Profile", [
+        f("job.job_title", "Job Title", job.job_title),
+        f("job.place_of_posting", "Place of Posting", job.place_of_posting),
+        f("job.work_mode", "Work Mode", job.work_mode),
+        f("job.expected_hires", "Expected Hires", job.expected_hires),
+        f("job.joining_month", "Joining Month", job.joining_month),
+        f("job.job_description", "Job Description", job.job_description),
+        f("required_skills", "Skills", skills),
+      ]),
+      mkSection(3, "Eligibility", [
+        f("eligibility.globalCgpa", "CGPA Cutoff", globalCgpa),
+      ]),
+      mkSection(4, "Salary Details", [
+        f("salary.currency", "Currency", currency),
+        ...SALARY_PROGS.map(p => f(`salary.${p}.ctc`, `${p} CTC`, salary[p]?.ctc)),
+      ]),
+      mkSection(5, "Selection Process", [
+        f("selection.selection_mode", "Selection Mode", selectionMode),
+        ...SELECTION_STAGES_LIST.map(s => f(`selection.${s.key}`, s.label.replace("\n", " "), stages[s.key])),
+      ]),
+      mkSection(6, "Declaration", [
+        f("signatory_name", "Signatory Name", signatoryName),
+        f("typed_signature", "Typed Signature", typedSignature),
+        f("declarations", "All Declarations", declarations.every(Boolean)),
+      ]),
+    ];
+  }, [company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa, currency, salary, selectionMode, stages, signatoryName, typedSignature, declarations, autoFilledKeys]);
+
+  // ── PDF Parse handler ───────────────────────────────────────────
+  const handlePdfParse = useCallback(async (file: File, onProgress: (s: string) => void) => {
+    const result = await parsePdf(file, "jnf", onProgress);
+    const data = result.data as JnfParsedData;
+
+    const filledFields = applyJnfParsedData(data, {
+      setCompany: (fn) => setCompany(fn),
+      setIndustrySectors,
+      setHeadTA: (fn) => setHeadTA(fn),
+      setPoc1: (fn) => setPoc1(fn),
+      setPoc2: (fn) => setPoc2(fn),
+      setJob: (fn) => setJob(fn),
+      setSkills,
+      setGlobalCgpa,
+      setGlobalBacklogs,
+      setCurrency,
+      setSalary: (fn) => setSalary(fn),
+      setStages: (fn) => setStages(fn),
+      setSelectionMode,
+      setTestType,
+      setInterviewModes,
+    });
+
+    setAutoFilledKeys(new Set(filledFields));
+    setTrackerOpen(true);
+    showToast(`AI auto-filled ${filledFields.length} fields from PDF ✓`);
+    return { fieldsCount: filledFields.length };
+  }, []);
 
   // ─────────────────────────────────────────────────────────────────
   //  API: create draft on first "Save & Continue"
@@ -329,6 +540,7 @@ export default function JnfNewPage() {
         const err = await submitRes.json();
         throw new Error(err.message || "Submission failed");
       }
+      clearDraft("jnf");
       showToast("JNF submitted successfully! Confirmation email sent. ✓");
       setTimeout(() => router.push("/dashboard"), 2500);
     } catch (e: any) {
@@ -360,10 +572,45 @@ export default function JnfNewPage() {
             </Typography>
           </Box>
         </Box>
-        {saving && <Box sx={{ display:"flex", alignItems:"center", gap:0.8, bgcolor:"rgba(255,255,255,0.1)", borderRadius:10, px:1.5, py:0.4 }}>
-          <CircularProgress size={10} sx={{ color:WHITE }} />
-          <Typography sx={{ color:WHITE, fontSize:"0.7rem" }}>Saving…</Typography>
-        </Box>}
+        <Box sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
+          {/* AI Auto-Fill Button */}
+          <Tooltip title="Upload a recruiter PDF to auto-fill form fields with AI">
+            <Button
+              variant="contained"
+              size="small"
+              startIcon={<AutoFixHighIcon sx={{ fontSize: 14 }} />}
+              onClick={() => setPdfDialogOpen(true)}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.15)",
+                color: WHITE,
+                textTransform: "none",
+                fontWeight: 800,
+                fontSize: "0.72rem",
+                borderRadius: 2,
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                px: 2,
+                py: 0.6,
+                "&:hover": {
+                  bgcolor: "rgba(255,255,255,0.25)",
+                  border: "1px solid rgba(255,255,255,0.4)",
+                },
+              }}
+            >
+              AI Auto-Fill
+            </Button>
+          </Tooltip>
+          {/* Tracker toggle */}
+          <Tooltip title={trackerOpen ? "Hide form tracker" : "Show form tracker"}>
+            <IconButton size="small" onClick={() => setTrackerOpen(!trackerOpen)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}>
+              <Typography sx={{ fontSize: "0.7rem", fontWeight: 800 }}>📋</Typography>
+            </IconButton>
+          </Tooltip>
+          {saving && <Box sx={{ display:"flex", alignItems:"center", gap:0.8, bgcolor:"rgba(255,255,255,0.1)", borderRadius:10, px:1.5, py:0.4 }}>
+            <CircularProgress size={10} sx={{ color:WHITE }} />
+            <Typography sx={{ color:WHITE, fontSize:"0.7rem" }}>Saving…</Typography>
+          </Box>}
+        </Box>
       </Box>
 
       {/* Stepper */}
@@ -388,21 +635,20 @@ export default function JnfNewPage() {
       </Box>
 
       <Box sx={{ maxWidth:1100, mx:"auto", px:{xs:2,md:4}, py:3 }}>
+        <InstitutionalHeader type="JNF" />
 
         {/* ══════════════════ STEP 1: COMPANY PROFILE ══════════════════ */}
         {step === 0 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="03" title="COMPANY PROFILE" />
+            {/* <SectionHeader title="COMPANY PROFILE" /> */}
             <Box sx={{ p:3, display:"grid", gridTemplateColumns:{xs:"1fr",md:"1fr 1fr"}, gap:3 }}>
               {/* Left: existing */}
               <Box sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-                <Box sx={{ bgcolor:MAROON, color:WHITE, textAlign:"center", py:0.7, borderRadius:1, fontSize:"0.68rem", fontWeight:800, letterSpacing:0.4 }}>
-                  EXISTING (Current JNF Form)
-                </Box>
+                
                 {[["company_name","Company Name",true],["website","Website",true]] .map(([k,l,r]) => (
-                  <Box key={k}>
+                  <Box key={k as string}>
                     <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                    <TextField fullWidth size="small" value={(company as any)[k]} onChange={e => setCompany(p => ({...p,[k]:e.target.value}))}
+                    <TextField fullWidth size="small" value={(company as any)[k as string]} onChange={e => setCompany(p => ({...p,[k as string]:e.target.value}))}
                       InputProps={k==="website" ? { startAdornment:<InputAdornment position="start"><LinkIcon sx={{fontSize:15,color:"#9CA3AF"}} /></InputAdornment> } : undefined}
                       sx={inputSx} />
                   </Box>
@@ -443,9 +689,7 @@ export default function JnfNewPage() {
 
               {/* Right: new additions */}
               <Box sx={{ display:"flex", flexDirection:"column", gap:2 }}>
-                <Box sx={{ bgcolor:"#B45309",color:WHITE,textAlign:"center",py:0.7,borderRadius:1,fontSize:"0.68rem",fontWeight:800,letterSpacing:0.4 }}>
-                  ★ NEW ADDITIONS (From Gap Analysis)
-                </Box>
+                
                 <Box>
                   <FieldLabel>Category / Org Type</FieldLabel>
                   <Select fullWidth size="small" value={company.category} onChange={e=>setCompany(p=>({...p,category:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
@@ -502,7 +746,7 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 2: CONTACT & HR ═════════════════════ */}
         {step === 1 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="04" title="CONTACT & HR DETAILS" />
+            {/* <SectionHeader title="CONTACT & HR DETAILS" /> */}
             <Box sx={{ p:3 }}>
               <Alert severity="info" sx={{ mb:2, fontSize:"0.75rem" }}>★ Landline per contact · All Primary Contact fields are mandatory.</Alert>
               <Box sx={{ display:"flex", gap:2, flexWrap:"wrap" }}>
@@ -519,7 +763,7 @@ export default function JnfNewPage() {
                       {[["name","Full Name",req],["designation","Designation",req],["email","Email Address",req],["phone","Mobile (+91)",req],["landline","Landline (Optional)",false]].map(([k,l,r]) => (
                         <Box key={k as string}>
                           <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                          <TextField fullWidth size="small" placeholder="Click to enter…" value={(val as any)[k]} onChange={e=>set((p:any)=>({...p,[k]:e.target.value}))} sx={inputSx} />
+                          <TextField fullWidth size="small" placeholder="Click to enter…" value={(val as any)[k as string]} onChange={e=>set((p:any)=>({...p,[k as string]:e.target.value}))} sx={inputSx} />
                         </Box>
                       ))}
                     </Box>
@@ -533,13 +777,13 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 3: JOB PROFILE ═══════════════════════ */}
         {step === 2 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="05" title="JOB PROFILE" />
+            {/* <SectionHeader title="JOB PROFILE" /> */}
             <Box sx={{ p:3, display:"flex", flexDirection:"column", gap:2.5 }}>
               <Box sx={{ display:"grid", gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr"}, gap:2 }}>
                 {[["job_title","Profile Name / Job Title",true],["job_formal_designation","Job Designation (Formal)"],["place_of_posting","Place of Posting",true],["registration_link","Registration Link (If Any)"],["bond_details","Bond Details (If Any)"],["onboarding","Onboarding to Company"]].map(([k,l,r])=>(
-                  <Box key={k}>
-                    <FieldLabel required={!!r}>{l}</FieldLabel>
-                    <TextField fullWidth size="small" value={(job as any)[k]} onChange={e=>setJob(p=>({...p,[k]:e.target.value}))} sx={inputSx} />
+                  <Box key={k as string}>
+                    <FieldLabel required={!!r}>{l as string}</FieldLabel>
+                    <TextField fullWidth size="small" value={(job as any)[k as string]} onChange={e=>setJob(p=>({...p,[k as string]:e.target.value}))} sx={inputSx} />
                   </Box>
                 ))}
                 <Box>
@@ -594,7 +838,7 @@ export default function JnfNewPage() {
         {step === 3 && (
           <Box>
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2.5 }}>
-              <SectionHeader step="06" title="ELIGIBILITY & COURSES" />
+              {/* <SectionHeader title="ELIGIBILITY & COURSES" /> */}
               {/* Global controls */}
               <Box sx={{ p:2, bgcolor:"#111827", display:"flex", flexWrap:"wrap", gap:2, alignItems:"center" }}>
                 <Typography sx={{ color:"rgba(255,255,255,0.45)",fontSize:"0.62rem",fontWeight:800,textTransform:"uppercase",letterSpacing:0.5 }}>Global Controls</Typography>
@@ -654,7 +898,7 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 5: SALARY ════════════════════════════ */}
         {step === 4 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="07" title="SALARY DETAILS" />
+            {/* <SectionHeader title="SALARY DETAILS" /> */}
             <Box sx={{ p:3 }}>
               {/* Currency */}
               <Box sx={{ display:"flex", alignItems:"center", gap:2, mb:2 }}>
@@ -706,7 +950,7 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 6: SELECTION PROCESS ═════════════════ */}
         {step === 5 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="08" title="SELECTION PROCESS" />
+            {/* <SectionHeader title="SELECTION PROCESS" /> */}
             <Box sx={{ p:3 }}>
               {/* Existing stages */}
               <Box sx={{ mb:2, bgcolor:"rgba(87,0,0,0.04)", border:`1px solid ${BORDER}`, borderRadius:1.5, p:2 }}>
@@ -821,7 +1065,7 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 7: DECLARATION ════════════════════════ */}
         {step === 6 && (
           <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <SectionHeader step="09" title="DECLARATION & SUBMIT" />
+            {/* <SectionHeader title="DECLARATION & SUBMIT" /> */}
             <Box sx={{ p:3, display:"grid", gridTemplateColumns:{xs:"1fr",md:"1fr 1fr"}, gap:3 }}>
               {/* Left */}
               <Box>
@@ -883,7 +1127,7 @@ export default function JnfNewPage() {
             {/* Company */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>03 — Company Profile</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Company Profile</Typography>
                 <IconButton size="small" onClick={()=>setStep(0)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2 }}>
@@ -907,7 +1151,7 @@ export default function JnfNewPage() {
             {/* Contacts */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>04 — Contact & HR Details</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Contact & HR Details</Typography>
                 <IconButton size="small" onClick={()=>setStep(1)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2, display:"grid", gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr 1fr"}, gap:2 }}>
@@ -923,7 +1167,7 @@ export default function JnfNewPage() {
             {/* Job */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>05 — Job Profile</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Job Profile</Typography>
                 <IconButton size="small" onClick={()=>setStep(2)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2 }}>
@@ -947,7 +1191,7 @@ export default function JnfNewPage() {
             {/* Eligibility summary */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>06 — Eligibility & Courses</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Eligibility & Courses</Typography>
                 <IconButton size="small" onClick={()=>setStep(3)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2 }}>
@@ -973,7 +1217,7 @@ export default function JnfNewPage() {
             {/* Salary */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>07 — Salary Details ({currency})</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Salary Details ({currency})</Typography>
                 <IconButton size="small" onClick={()=>setStep(4)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2 }}>
@@ -992,7 +1236,7 @@ export default function JnfNewPage() {
             {/* Selection */}
             <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
               <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>08 — Selection Process</Typography>
+                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Selection Process</Typography>
                 <IconButton size="small" onClick={()=>setStep(5)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
               </Box>
               <Box sx={{ p:2 }}>
@@ -1073,6 +1317,24 @@ export default function JnfNewPage() {
       <Snackbar open={toast.open} autoHideDuration={3500} onClose={()=>setToast(p=>({...p,open:false}))} anchorOrigin={{vertical:"bottom",horizontal:"right"}}>
         <Alert severity={toast.type} sx={{ fontWeight:700, fontSize:"0.8rem" }}>{toast.msg}</Alert>
       </Snackbar>
+
+      {/* AI PDF Upload Dialog */}
+      <PdfUploadDialog
+        open={pdfDialogOpen}
+        onClose={() => setPdfDialogOpen(false)}
+        onParse={handlePdfParse}
+        formType="jnf"
+      />
+
+      {/* Cross-Page Form Tracker */}
+      <FormTracker
+        sections={trackerSections}
+        currentStep={step}
+        onJumpToStep={setStep}
+        autoFilledKeys={autoFilledKeys}
+        open={trackerOpen}
+        onToggle={() => setTrackerOpen(!trackerOpen)}
+      />
     </Box>
   );
 }

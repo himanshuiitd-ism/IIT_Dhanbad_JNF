@@ -50,22 +50,40 @@ class InfController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        // Check edit restriction for recruiters
-        if ($user->role === 'recruiter' && $inf->edit_count >= 1) {
+        // Only allow edits if status is draft OR if count is 0 (unlocked by admin)
+        if ($user->role === 'recruiter' && $inf->isSubmitted() && $inf->edit_count >= 1) {
             return response()->json([
                 'message' => 'Edit limit reached. Please contact admin to request further changes.'
             ], 403);
         }
 
         $inf->update($request->all());
-        
-        if ($user->role === 'recruiter') {
-            $inf->increment('edit_count');
-        }
 
         return response()->json([
             'message' => 'INF updated successfully',
             'data' => $inf
         ]);
+    }
+
+    public function submit(Request $request, Inf $inf)
+    {
+        $user = Auth::user();
+        if ($inf->user_id !== $user->id) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($inf->isSubmitted() && $inf->edit_count >= 1) {
+            return response()->json(['message' => 'Form locked.'], 403);
+        }
+
+        // Increment edit count if this is a re-submission
+        $editCount = $inf->isSubmitted() ? $inf->edit_count + 1 : $inf->edit_count;
+
+        $inf->update(array_merge($request->all(), [
+            'status' => 'submitted',
+            'edit_count' => $editCount
+        ]));
+
+        return response()->json(['message' => 'INF submitted successfully.']);
     }
 }

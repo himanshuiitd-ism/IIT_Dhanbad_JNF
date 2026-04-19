@@ -35,4 +35,24 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | AI PDF Parser Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Provider-agnostic AI config. To switch from Gemini to Qwen:
+    |   1. Set AI_PARSER_PROVIDER=qwen in .env
+    |   2. Add QWEN_API_KEY and QWEN_MODEL
+    |   3. Create QwenParser.php implementing AiParserInterface
+    |
+    */
+    'ai_parser' => [
+        'provider'       => env('AI_PARSER_PROVIDER', 'gemini'),
+        'gemini_api_key' => env('GEMINI_API_KEY'),
+        'gemini_model'   => env('GEMINI_MODEL', 'gemini-2.0-flash'),
+        // Future: Qwen config
+        // 'qwen_api_key' => env('QWEN_API_KEY'),
+        // 'qwen_model'   => env('QWEN_MODEL', 'qwen-plus'),
+    ],
+
 ];

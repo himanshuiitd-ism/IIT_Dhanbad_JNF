@@ -46,4 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/edit-requests/mine',                      [\App\Http\Controllers\Api\EditRequestController::class, 'myRequests']);
     Route::post('/edit-requests/{editRequest}/approve',    [\App\Http\Controllers\Api\EditRequestController::class, 'approve']);
     Route::post('/edit-requests/{editRequest}/reject',     [\App\Http\Controllers\Api\EditRequestController::class, 'reject']);
+
+    // AI PDF Parser route
+    Route::post('/parse-pdf', [\App\Http\Controllers\Api\PdfParserController::class, 'parse']);
 });
