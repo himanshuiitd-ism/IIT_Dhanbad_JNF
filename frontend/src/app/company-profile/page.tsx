@@ -116,7 +116,7 @@ export default function CompanyProfilePage() {
 
     // Try to save to backend (non-blocking — works even if backend is offline)
     try {
-      const token = localStorage.getItem("auth_token");
+      const token = localStorage.getItem("local_token") || localStorage.getItem("admin_token") || localStorage.getItem("auth_token");
       if (token) {
         await fetch("http://localhost:8000/api/company-profile", {
           method: "POST",

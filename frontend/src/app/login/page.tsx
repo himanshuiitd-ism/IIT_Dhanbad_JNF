@@ -68,6 +68,26 @@ function LoginForm() {
       localStorage.setItem("local_user_role", local.role);
       localStorage.setItem("local_user_name", local.name);
       localStorage.setItem("local_user_email", local.email);
+
+      // Also try to get a real Sanctum token from the backend
+      try {
+        const res = await fetch("http://localhost:8000/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({ email: local.email, password: local.password }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const token = data.token || data.access_token;
+          if (token) {
+            localStorage.setItem("local_token", token);
+            if (local.role === "admin") localStorage.setItem("admin_token", token);
+          }
+        }
+      } catch {
+        // Backend may be offline — proceed without token
+      }
+
       setLoading(false);
 
       // Recruiters: redirect to company profile page if not yet filled

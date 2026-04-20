@@ -166,7 +166,9 @@ const initAdditional = () => ({
   joining_bonus:"", retention_bonus:"", bond_deductions:"", esops:"", relocation:"",
 });
 
-const TOKEN = () => typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+const TOKEN = () => typeof window !== "undefined"
+  ? (localStorage.getItem("local_token") || localStorage.getItem("admin_token") || localStorage.getItem("auth_token"))
+  : null;
 const API = "http://localhost:8000/api";
 
 // ═══════════════════════════════════════════════════════════════════

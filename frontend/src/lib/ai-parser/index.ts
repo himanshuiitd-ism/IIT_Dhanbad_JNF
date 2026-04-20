@@ -14,7 +14,10 @@ const API_BASE = "http://localhost:8000/api";
 
 function getToken(): string | null {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem("auth_token");
+  return localStorage.getItem("local_token")
+    || localStorage.getItem("admin_token")
+    || localStorage.getItem("auth_token")
+    || null;
 }
 
 /**

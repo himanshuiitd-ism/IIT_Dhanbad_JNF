@@ -281,7 +281,7 @@ export default function DashboardPage() {
     if (!session || userRole !== "recruiter") return;
     const iv = setInterval(() => {
       axios.get("http://localhost:8000/api/notifications")
-        .then(r => setNotifCount(r.data.filter((n: any) => !n.is_read).length))
+        .then((r: import("axios").AxiosResponse) => setNotifCount(r.data.filter((n: any) => !n.is_read).length))
         .catch(() => {});
     }, 30000);
     return () => clearInterval(iv);
@@ -362,7 +362,7 @@ export default function DashboardPage() {
 
   // Helper: get edit request status for a specific form
   const getEditRequestStatus = (sub: Submission): EditRequest | undefined =>
-    myEditRequests.find(r => r.form_type === sub.type.toLowerCase() && r.form_id === sub.id);
+    myEditRequests.find((r: EditRequest) => r.form_type === sub.type.toLowerCase() && r.form_id === sub.id);
 
   const navItems = [
     { label: "Dashboard", icon: <DashboardIcon sx={{ fontSize: 18 }} /> },
@@ -437,7 +437,7 @@ export default function DashboardPage() {
               </ListItemButton>
             </ListItem>
             
-            {idx === 0 && (
+            {idx === 0 && userRole !== "admin" && (
               <Box sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}>
                 <ListItem disablePadding sx={{ mb: 0.5 }}>
                   <ListItemButton

@@ -193,7 +193,9 @@ const STEPS = [
 ];
 
 const API = "http://localhost:8000/api";
-const TOKEN = () => typeof window !== "undefined" ? localStorage.getItem("auth_token") : null;
+const TOKEN = () => typeof window !== "undefined"
+  ? (localStorage.getItem("local_token") || localStorage.getItem("admin_token") || localStorage.getItem("auth_token"))
+  : null;
 
 // ═══════════════════════════════════════════════════════════════════
 export default function InfNewPage() {

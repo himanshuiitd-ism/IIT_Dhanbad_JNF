@@ -15,11 +15,27 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // User::factory(10)->create();
+        // Demo admin account (matches frontend LOCAL_ACCOUNTS)
+        User::firstOrCreate(
+            ['email' => 'admin@iitism.ac.in'],
+            [
+                'name'     => 'Admin',
+                'password' => 'admin',
+                'role'     => 'admin',
+                'profile_complete' => true,
+            ]
+        );
 
-        User::factory()->create([
-            'name' => 'Test User',
-            'email' => 'test@example.com',
-        ]);
+        // Demo recruiter account (matches frontend LOCAL_ACCOUNTS)
+        User::firstOrCreate(
+            ['email' => 'recruiter@tcs.com'],
+            [
+                'name'         => 'Recruiter',
+                'password'     => 'password',
+                'role'         => 'recruiter',
+                'organisation' => 'TCS',
+                'profile_complete' => true,
+            ]
+        );
     }
 }
