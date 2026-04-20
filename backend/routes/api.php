@@ -7,6 +7,9 @@ use App\Http\Controllers\Api\AuthController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']); // legacy / admin bypass
 
+// ── Alumni Mentorship (public submission) ─────────────────────────────
+Route::post('/alumni-mentorship', [\App\Http\Controllers\Api\AlumniMentorshipController::class, 'store']);
+
 // 2-Step Registration
 Route::post('/auth/send-otp',    [AuthController::class, 'sendOtp']);
 Route::post('/auth/verify-otp',  [AuthController::class, 'verifyOtp']);
@@ -61,6 +64,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/communicate',             [\App\Http\Controllers\Api\AdminController::class, 'sendCommunication']);
         Route::get('/forms/{type}/{id}/comms',  [\App\Http\Controllers\Api\AdminController::class, 'getFormCommunications']);
     });
+
+    // ── Alumni Mentorship (admin management) ───────────────────────────
+    Route::get('/alumni-mentorship',            [\App\Http\Controllers\Api\AlumniMentorshipController::class, 'index']);
+    Route::get('/alumni-mentorship/{id}',       [\App\Http\Controllers\Api\AlumniMentorshipController::class, 'show']);
+    Route::patch('/alumni-mentorship/{id}',     [\App\Http\Controllers\Api\AlumniMentorshipController::class, 'updateStatus']);
+    Route::delete('/alumni-mentorship/{id}',    [\App\Http\Controllers\Api\AlumniMentorshipController::class, 'destroy']);
 
     // ── AI PDF Parser route ────────────────────────────────────────
     Route::post('/parse-pdf', [\App\Http\Controllers\Api\PdfParserController::class, 'parse']);

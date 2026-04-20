@@ -25,17 +25,20 @@ import {
   Paper,
 } from "@mui/material";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
-import PeopleAltRoundedIcon from "@mui/icons-material/PeopleAltRounded";
-import DescriptionRoundedIcon from "@mui/icons-material/DescriptionRounded";
-import NotificationsRoundedIcon from "@mui/icons-material/NotificationsRounded";
-import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
-import MenuRoundedIcon from "@mui/icons-material/MenuRounded";
-import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
-import CancelRoundedIcon from "@mui/icons-material/CancelRounded";
-import AccessTimeRoundedIcon from "@mui/icons-material/AccessTimeRounded";
-import MarkEmailReadRoundedIcon from "@mui/icons-material/MarkEmailReadRounded";
-import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
-import ArticleRoundedIcon from "@mui/icons-material/ArticleRounded";
+import {
+  PeopleAltRounded,
+  DescriptionRounded,
+  NotificationsRounded,
+  LogoutRounded,
+  MenuRounded,
+  CheckCircleRounded,
+  CancelRounded,
+  AccessTimeRounded,
+  MarkEmailReadRounded,
+  EditNoteRounded,
+  ArticleRounded,
+  GroupsRounded
+} from "@mui/icons-material";
 import axios from "axios";
 
 const MAROON = "#7B0000";
@@ -45,30 +48,31 @@ const SIDEBAR_W = 260;
 // ─── Notification type icon ────────────────────────────────────
 const NotifIcon = ({ type }: { type: string }) => {
   const props = { fontSize: "small" as const };
-  if (type === "approval")     return <CheckCircleRoundedIcon {...props} sx={{ color: "#059669" }} />;
-  if (type === "rejection")    return <CancelRoundedIcon {...props} sx={{ color: "#DC2626" }} />;
+  if (type === "approval") return <CheckCircleRoundedIcon {...props} sx={{ color: "#059669" }} />;
+  if (type === "rejection") return <CancelRoundedIcon {...props} sx={{ color: "#DC2626" }} />;
   if (type === "edit_request") return <EditNoteRoundedIcon {...props} sx={{ color: "#D97706" }} />;
-  if (type === "email")        return <MarkEmailReadRoundedIcon {...props} sx={{ color: "#2563EB" }} />;
+  if (type === "email") return <MarkEmailReadRoundedIcon {...props} sx={{ color: "#2563EB" }} />;
   return <ArticleRoundedIcon {...props} sx={{ color: "#6B7280" }} />;
 };
 
 const navLinks = [
-  { label: "Dashboard",      path: "/admin",                icon: <DashboardRoundedIcon /> },
-  { label: "Recruiters",     path: "/admin/recruiters",     icon: <PeopleAltRoundedIcon /> },
-  { label: "JNF Reviews",    path: "/admin/forms/jnf",      icon: <DescriptionRoundedIcon /> },
-  { label: "INF Reviews",    path: "/admin/forms/inf",      icon: <DescriptionRoundedIcon /> },
-  { label: "Notifications",  path: "/admin/notifications",  icon: <NotificationsRoundedIcon /> },
+  { label: "Dashboard", path: "/admin", icon: <DashboardRoundedIcon /> },
+  { label: "Recruiters", path: "/admin/recruiters", icon: <PeopleAltRoundedIcon /> },
+  { label: "JNF Reviews", path: "/admin/forms/jnf", icon: <DescriptionRoundedIcon /> },
+  { label: "INF Reviews", path: "/admin/forms/inf", icon: <DescriptionRoundedIcon /> },
+  { label: "Alumni Mentorship", path: "/admin/alumni-mentorship", icon: <GroupsRoundedIcon /> },
+  { label: "Notifications", path: "/admin/notifications", icon: <NotificationsRoundedIcon /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen]   = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [notifAnchor, setNotifAnchor] = useState<null | HTMLElement>(null);
-  const [notifs, setNotifs]           = useState<any[]>([]);
+  const [notifs, setNotifs] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [adminName, setAdminName]     = useState("Admin");
-  const [loading, setLoading]         = useState(true);
+  const [adminName, setAdminName] = useState("Admin");
+  const [loading, setLoading] = useState(true);
 
   // Fetch admin notifications
   const fetchNotifs = useCallback(async () => {
@@ -94,7 +98,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Accept admin_token, local_token, or local_user_role=admin
     const token = localStorage.getItem("admin_token") || localStorage.getItem("local_token");
-    const role  = localStorage.getItem("local_user_role");
+    const role = localStorage.getItem("local_user_role");
     if (!token && role !== "admin") {
       // Don't hard-block — just try fetching; the session might provide the token
     }
@@ -115,7 +119,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    ["admin_token","local_user_role","local_user_name","local_user_email","admin_name"].forEach(k => localStorage.removeItem(k));
+    ["admin_token", "local_user_role", "local_user_name", "local_user_email", "admin_name"].forEach(k => localStorage.removeItem(k));
     router.push("/login");
   };
 
