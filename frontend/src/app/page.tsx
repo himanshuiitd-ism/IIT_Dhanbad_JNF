@@ -751,21 +751,20 @@ export default function HomePage() {
                   borderRadius: 4,
                   bgcolor: CREAM_DARK,
                   border: `4px solid ${RED}`,
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: 1,
                   overflow: "hidden",
                   boxShadow: "0 8px 32px rgba(139,0,0,0.18)",
                 }}
               >
-                <PersonIcon sx={{ fontSize: 80, color: RED, opacity: 0.4 }} />
-                <Typography variant="caption" color={TEXT_MUTED} textAlign="center" px={2}>
-                  Director Photo
-                  <br />
-                  (To be updated)
-                </Typography>
+                <Box
+                  component="img"
+                  src="/director.jpg"
+                  alt="Director Prof. Sukumar Mishra"
+                  sx={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "cover",
+                  }}
+                />
               </Box>
             </Grid>
 
