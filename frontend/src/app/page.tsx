@@ -106,7 +106,7 @@ const contacts = [
   },
   {
     name: "[Student Coordinator Name]",
-    role: "Student Head, JNF Cell",
+    role: "Student Head, CDC",
     email: "jnf-head@iitism.ac.in",
     phone: "+91-XXXXXXXXXX",
     photo: null,
@@ -197,7 +197,7 @@ export default function HomePage() {
                     lineHeight: 1.2,
                   }}
                 >
-                  JNF Cell, IIT (ISM) Dhanbad
+                  CDC, IIT (ISM) Dhanbad
                 </Typography>
                 <Typography
                   sx={{
@@ -1038,7 +1038,7 @@ export default function HomePage() {
               <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, mb: 2 }}>
                 <AccountBalanceIcon sx={{ color: "#FFD700", fontSize: 28 }} />
                 <Typography fontWeight={800} fontSize="1rem">
-                  JNF Cell, IIT (ISM) Dhanbad
+                  CDC, IIT (ISM) Dhanbad
                 </Typography>
               </Box>
               <Typography
@@ -1117,7 +1117,7 @@ export default function HomePage() {
           <Divider sx={{ borderColor: "rgba(255,255,255,0.12)", mb: 3 }} />
           <Box sx={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: 1 }}>
             <Typography variant="caption" sx={{ opacity: 0.55 }}>
-              © {new Date().getFullYear()} JNF Cell, IIT (ISM) Dhanbad. All rights reserved.
+              © {new Date().getFullYear()} CDC, IIT (ISM) Dhanbad. All rights reserved.
             </Typography>
             <Typography variant="caption" sx={{ opacity: 0.55 }}>
               IIT (Indian School of Mines) Dhanbad, Jharkhand, India
