@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -98,10 +99,14 @@ export default function AdminAlumniMentorshipPage() {
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const router = useRouter();
+
   const getToken = () =>
     localStorage.getItem("admin_token") ||
     localStorage.getItem("local_token") ||
     "";
+    
+  const getRole = () => localStorage.getItem("local_user_role");
 
   const fetchApplications = useCallback(async () => {
     setLoading(true);
@@ -109,7 +114,8 @@ export default function AdminAlumniMentorshipPage() {
     try {
       const token = getToken();
       const params = filterStatus !== "all" ? { status: filterStatus } : {};
-      const res = await axios.get("http://localhost:8000/api/alumni-mentorship", {
+      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const res = await axios.get(`${API_BASE}/alumni-mentorship`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
@@ -121,7 +127,15 @@ export default function AdminAlumniMentorshipPage() {
     }
   }, [filterStatus]);
 
-  useEffect(() => { fetchApplications(); }, [fetchApplications]);
+  useEffect(() => {
+    const role = getRole();
+    const token = getToken();
+    if (!token || role !== "admin") {
+      router.replace("/");
+      return;
+    }
+    fetchApplications();
+  }, [fetchApplications, router]);
 
   const updateStatus = async (id: number, status: string) => {
     setUpdatingId(id);

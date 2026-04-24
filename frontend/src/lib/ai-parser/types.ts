@@ -71,6 +71,12 @@ export interface JnfParsedData {
     selection_mode: string | null;
     test_type: string | null;
     interview_modes: string[];
+    test_rounds: Array<{ name: string; duration: string; type: string }>;
+    interview_rounds: Array<{ name: string; duration: string; mode: string }>;
+    psychometric_test: boolean | null;
+    medical_test: boolean | null;
+    infrastructure: string | null;
+    other_screening: string | null;
   };
   confidence_scores: Record<string, number>;
 }
@@ -85,26 +91,75 @@ export interface ContactParsed {
 
 // ── INF Parsed Data Structure ────────────────────────────────────
 export interface InfParsedData {
-  company_name: string | null;
-  website: string | null;
-  postal_address: string | null;
-  sector: string | null;
-  category: string | null;
-  primary_contact_name: string | null;
-  primary_contact_designation: string | null;
-  primary_contact_email: string | null;
-  primary_contact_phone: string | null;
-  internship_designation: string | null;
-  internship_description: string | null;
-  place_of_posting: string | null;
-  duration_weeks: string | null;
-  monthly_stipend: string | null;
-  ppo_provision: boolean | null;
-  ppo_ctc: string | null;
-  eligible_degrees: string[];
-  eligible_departments: string[];
-  min_cutoff_cgpa: string | null;
-  selection_ppt: boolean | null;
+  company: {
+    company_name: string | null;
+    website: string | null;
+    postal_address: string | null;
+    employees: string | null;
+    sector: string | null;
+    category: string | null;
+    date_of_establishment: string | null;
+    annual_turnover: string | null;
+    linkedin: string | null;
+    hq_country: string | null;
+    nature_of_business: string | null;
+    description: string | null;
+  };
+  industry_sectors: string[];
+  contacts: {
+    head_hr: ContactParsed;
+    poc1: ContactParsed;
+    poc2: ContactParsed;
+  };
+  internship: {
+    profile_name: string | null;
+    formal_title: string | null;
+    location: string | null;
+    work_mode: string | null;
+    expected_interns: string | null;
+    min_interns: string | null;
+    start_date: string | null;
+    duration_weeks: string | null;
+    description: string | null;
+    additional_info: string | null;
+    bond_details: string | null;
+    registration_link: string | null;
+    ppo_provision: boolean | null;
+    ppo_ctc: string | null;
+  };
+  required_skills: string[];
+  eligibility: {
+    globalCgpa: string | null;
+    globalBacklogs: boolean | null;
+    eligible_branches: string[];
+    eligible_degrees: string[];
+  };
+  stipend: {
+    currency: string;
+    programmes: Record<string, { monthly: string | null; base: string | null; takehome: string | null }>;
+    additional: {
+      joining_bonus: string | null;
+      retention_bonus: string | null;
+      accommodation: string | null;
+      relocation: string | null;
+    };
+  };
+  selection: {
+    pre_placement_talk: boolean | null;
+    resume_shortlisting: boolean | null;
+    online_written_test: boolean | null;
+    group_discussion: boolean | null;
+    personal_tech_interview: boolean | null;
+    selection_mode: string | null;
+    test_type: string | null;
+    interview_modes: string[];
+    test_rounds: Array<{ name: string; duration: string; type: string }>;
+    interview_rounds: Array<{ name: string; duration: string; mode: string }>;
+    psychometric_test: boolean | null;
+    medical_test: boolean | null;
+    infrastructure: string | null;
+    other_screening: string | null;
+  };
   confidence_scores: Record<string, number>;
 }
 

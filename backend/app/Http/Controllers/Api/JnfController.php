@@ -52,47 +52,12 @@ class JnfController extends Controller
     {
         $this->authorizeOwner($jnf);
 
-        // Don't allow re-saving a fully submitted form if edit is locked
         $user = Auth::user();
         if ($jnf->isSubmitted() && !$jnf->canRecruiterEdit($user)) {
             return response()->json(['message' => 'Edit limit reached. Request admin to unlock.'], 403);
         }
 
-        $data = $request->except(['_token', '_method']);
-
-        // Handle file uploads
-        if ($request->hasFile('logo')) {
-            $path = $request->file('logo')->store('jnf/logos', 'public');
-            $data['logo_path'] = $path;
-            unset($data['logo']);
-        }
-        if ($request->hasFile('brochure_pdf')) {
-            $path = $request->file('brochure_pdf')->store('jnf/brochures', 'public');
-            $data['brochure_path'] = $path;
-            unset($data['brochure_pdf']);
-        }
-        if ($request->hasFile('jd_pdf')) {
-            $path = $request->file('jd_pdf')->store('jnf/jd', 'public');
-            $data['jd_pdf_path'] = $path;
-            unset($data['jd_pdf']);
-        }
-
-        // Decode JSON strings that arrive as strings
-        $jsonFields = [
-            'industry_sectors', 'head_ta', 'poc1', 'poc2',
-            'required_skills', 'eligibility', 'salary', 'additional_salary',
-            'selection_stages', 'test_rounds', 'interview_rounds', 'interview_modes',
-            'declarations',
-        ];
-        foreach ($jsonFields as $field) {
-            if (isset($data[$field]) && is_string($data[$field])) {
-                $decoded = json_decode($data[$field], true);
-                if (json_last_error() === JSON_ERROR_NONE) {
-                    $data[$field] = $decoded;
-                }
-            }
-        }
-
+        $data = $this->prepareData($request);
         $jnf->update($data);
 
         return response()->json(['message' => 'Draft saved', 'data' => $jnf]);
@@ -104,27 +69,18 @@ class JnfController extends Controller
     public function submit(Request $request, Jnf $jnf)
     {
         $this->authorizeOwner($jnf);
-
         $user = Auth::user();
 
-        // Already submitted and edit-locked?
         if ($jnf->isSubmitted() && !$jnf->canRecruiterEdit($user)) {
             return response()->json(['message' => 'Form already submitted and edit count exhausted.'], 403);
         }
 
-        // Basic required-field validation
-        $request->validate([
-            'company_name'        => 'required|string',
-            'job_title'           => 'required|string',
-            'signatory_name'      => 'required|string',
-            'typed_signature'     => 'required|string',
-        ]);
-
-        // Increment edit count if this is a re-submission
+        $data = $this->prepareData($request);
+        
         $editCount = $jnf->isSubmitted() ? $jnf->edit_count + 1 : $jnf->edit_count;
 
         $jnf->update(array_merge(
-            $request->except(['_token', '_method']),
+            $data,
             [
                 'status'       => 'submitted',
                 'submitted_at' => now(),
@@ -231,8 +187,45 @@ class JnfController extends Controller
                     ->from(config('mail.from.address'), 'CDC IIT (ISM) Dhanbad')
             );
         } catch (\Throwable $e) {
-            // Email failure should not fail the submission
             \Log::warning('JNF confirmation email failed: ' . $e->getMessage());
         }
+    }
+
+    private function prepareData(Request $request)
+    {
+        $data = $request->except(['_token', '_method']);
+
+        // Handle file uploads
+        if ($request->hasFile('logo')) {
+            $data['logo_path'] = $request->file('logo')->store('jnf/logos', 'public');
+            unset($data['logo']);
+        }
+        if ($request->hasFile('brochure_pdf')) {
+            $data['brochure_path'] = $request->file('brochure_pdf')->store('jnf/brochures', 'public');
+            unset($data['brochure_pdf']);
+        }
+        if ($request->hasFile('jd_pdf')) {
+            $data['jd_pdf_path'] = $request->file('jd_pdf')->store('jnf/jd', 'public');
+            unset($data['jd_pdf']);
+        }
+
+        // Decode JSON strings from FormData
+        $jsonFields = [
+            'industry_sectors', 'head_ta', 'poc1', 'poc2',
+            'required_skills', 'eligibility', 'salary', 'additional_salary',
+            'selection_stages', 'test_rounds', 'interview_rounds', 'interview_modes',
+            'declarations',
+        ];
+
+        foreach ($jsonFields as $field) {
+            if (isset($data[$field]) && is_string($data[$field])) {
+                $decoded = json_decode($data[$field], true);
+                if (json_last_error() === JSON_ERROR_NONE) {
+                    $data[$field] = $decoded;
+                }
+            }
+        }
+
+        return $data;
     }
 }
