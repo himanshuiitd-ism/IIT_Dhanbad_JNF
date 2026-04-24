@@ -96,22 +96,25 @@ const processSteps = [
 // ─── Contact Cards ───────────────────────────────────────────
 const contacts = [
   {
-    name: "Prof. [Name Placeholder]",
-    role: "Faculty Advisor, JNF Cell",
+    name: "Prof. Saumya Singh",
+    role: "Chairperson, CDC",
     email: "jnf-advisor@iitism.ac.in",
     phone: "+91-XXXXXXXXXX",
+    photo: "/cdc_cp.jpg",
   },
   {
     name: "[Student Coordinator Name]",
     role: "Student Head, JNF Cell",
     email: "jnf-head@iitism.ac.in",
     phone: "+91-XXXXXXXXXX",
+    photo: null,
   },
   {
     name: "[Placement Officer Name]",
     role: "Placement Officer",
     email: "placement@iitism.ac.in",
     phone: "+91-0326-XXXXXXX",
+    photo: null,
   },
 ];
 
@@ -938,18 +941,36 @@ export default function HomePage() {
                   <CardContent>
                     <Box
                       sx={{
-                        width: 72,
-                        height: 72,
-                        borderRadius: "50%",
+                        width: c.photo ? 120 : 72,
+                        height: c.photo ? 140 : 72,
+                        borderRadius: c.photo ? 3 : "50%",
                         bgcolor: CREAM_DARK,
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
                         mx: "auto",
                         mb: 2,
+                        overflow: "hidden",
+                        border: `2px solid ${RED}`,
+                        boxShadow: c.photo ? "0 4px 16px rgba(139,0,0,0.15)" : "none",
                       }}
                     >
-                      <PersonIcon sx={{ color: RED, fontSize: 36 }} />
+                      {c.photo ? (
+                        <Box
+                          component="img"
+                          src={c.photo}
+                          alt={c.name}
+                          sx={{
+                            width: "100%",
+                            height: "100%",
+                            objectFit: "cover",
+                            objectPosition: "top center",
+                            display: "block",
+                          }}
+                        />
+                      ) : (
+                        <PersonIcon sx={{ color: RED, fontSize: 36 }} />
+                      )}
                     </Box>
                     <Typography fontWeight={700} color={TEXT_DARK} mb={0.5}>
                       {c.name}
