@@ -27,9 +27,12 @@ import PendingActionsRoundedIcon from "@mui/icons-material/PendingActionsRounded
 import CheckCircleRoundedIcon from "@mui/icons-material/CheckCircleRounded";
 import EditNoteRoundedIcon from "@mui/icons-material/EditNoteRounded";
 import OpenInNewRoundedIcon from "@mui/icons-material/OpenInNewRounded";
+import GroupsRoundedIcon from "@mui/icons-material/GroupsRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import axios from "axios";
 
 const MAROON = "#7B0000";
+const DEEP_RED = "#4A0000";
 const RED    = "#B91C1C";
 
 // ── Status chip ──────────────────────────────────────────────
@@ -40,9 +43,12 @@ const STATUS_STYLES: Record<string, { bg: string; color: string }> = {
   PENDING:   { bg: "#FEF3C7", color: "#92400E" },
   LIVE:      { bg: "#ECFDF5", color: "#059669" },
   DRAFT:     { bg: "#F3F4F6", color: "#6B7280" },
+  pending:   { bg: "#FEF3C7", color: "#92400E" },
+  reviewed:  { bg: "#DBEAFE", color: "#1D4ED8" },
+  contacted: { bg: "#D1FAE5", color: "#059669" },
 };
 const StatusBadge = ({ status }: { status: string }) => {
-  const s = STATUS_STYLES[status?.toUpperCase()] || { bg: "#F3F4F6", color: "#6B7280" };
+  const s = STATUS_STYLES[status?.toUpperCase()] || STATUS_STYLES[status] || { bg: "#F3F4F6", color: "#6B7280" };
   return (
     <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.5, px: 1.2, py: 0.3, borderRadius: 10, bgcolor: s.bg }}>
       <Box sx={{ width: 6, height: 6, borderRadius: "50%", bgcolor: s.color }} />
@@ -99,27 +105,31 @@ export default function AdminDashboard() {
   const [recentJnfs, setRecentJnfs] = useState<any[]>([]);
   const [recentInfs, setRecentInfs] = useState<any[]>([]);
   const [recruiters, setRecruiters] = useState<any[]>([]);
+  const [alumniApps, setAlumniApps] = useState<any[]>([]);
   const [loading, setLoading]     = useState(true);
 
   const authHeaders = useCallback(() => {
     const token = localStorage.getItem("admin_token")
+      || localStorage.getItem("local_token")
       || localStorage.getItem("nextauth.session-token");
     return token ? { Authorization: `Bearer ${token}` } : {};
   }, []);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [statsRes, jnfRes, infRes, usersRes] = await Promise.all([
+      const [statsRes, jnfRes, infRes, usersRes, alumniRes] = await Promise.allSettled([
         axios.get("http://localhost:8000/api/admin/stats", { headers: authHeaders() }),
         axios.get("http://localhost:8000/api/admin/forms?type=jnf", { headers: authHeaders() }),
         axios.get("http://localhost:8000/api/admin/forms?type=inf", { headers: authHeaders() }),
         axios.get("http://localhost:8000/api/admin/users", { headers: authHeaders() }),
+        axios.get("http://localhost:8000/api/alumni-mentorship", { headers: authHeaders() }),
       ]);
-      setStats(statsRes.data);
-      setRecentJnfs(jnfRes.data.slice(0, 5));
-      setRecentInfs(infRes.data.slice(0, 5));
-      setRecruiters(usersRes.data.slice(0, 6));
-    } catch (err) {
+      if (statsRes.status === "fulfilled") setStats(statsRes.value.data);
+      if (jnfRes.status === "fulfilled") setRecentJnfs(jnfRes.value.data.slice(0, 5));
+      if (infRes.status === "fulfilled") setRecentInfs(infRes.value.data.slice(0, 5));
+      if (usersRes.status === "fulfilled") setRecruiters(usersRes.value.data.slice(0, 6));
+      if (alumniRes.status === "fulfilled") setAlumniApps(alumniRes.value.data.slice(0, 5));
+    } catch {
       // backend may be offline - show empty state
     } finally {
       setLoading(false);
@@ -136,26 +146,83 @@ export default function AdminDashboard() {
     );
   }
 
+  const alumniPending = alumniApps.filter((a: any) => a.status === "pending").length;
+
   const statCards = [
     { icon: <PeopleAltRoundedIcon />, label: "Total Recruiters", value: stats?.total_users || recruiters.length, sub: "Registered companies", accent: "#2563EB", path: "/admin/recruiters" },
     { icon: <DescriptionRoundedIcon />, label: "JNF Submissions", value: stats?.total_jnfs || recentJnfs.length, sub: "Job notification forms", accent: "#7C3AED", path: "/admin/forms/jnf" },
     { icon: <DescriptionRoundedIcon />, label: "INF Submissions", value: stats?.total_infs || recentInfs.length, sub: "Internship notification forms", accent: "#0891B2", path: "/admin/forms/inf" },
     { icon: <PendingActionsRoundedIcon />, label: "Pending Review", value: (stats?.pending_jnfs || 0) + (stats?.pending_infs || 0), sub: "Awaiting your decision", accent: "#D97706", path: "/admin/forms/jnf" },
     { icon: <CheckCircleRoundedIcon />, label: "Approved Forms", value: (stats?.approved_jnfs || 0) + (stats?.approved_infs || 0), sub: "Forms cleared for recruiting", accent: "#059669" },
-    { icon: <EditNoteRoundedIcon />, label: "Edit Requests", value: stats?.edit_requests || 0, sub: "Recruiter unlock requests", accent: RED },
+    { icon: <GroupsRoundedIcon />, label: "Alumni Applications", value: alumniApps.length, sub: `${alumniPending} pending review`, accent: "#E11D48", path: "/admin/alumni-mentorship" },
   ];
 
   return (
     <Box>
-      {/* Header */}
-      <Box sx={{ mb: 4 }}>
-        <Typography sx={{ fontWeight: 900, fontSize: "1.6rem", color: "#111827", letterSpacing: -0.5 }}>
-          Overview
-        </Typography>
-        <Typography sx={{ color: "#6B7280", fontSize: "0.85rem", mt: 0.5 }}>
-          IIT (ISM) Dhanbad — Career Development Centre Verifier Panel
-        </Typography>
-      </Box>
+      {/* Welcome Banner */}
+      <Paper
+        elevation={0}
+        sx={{
+          mb: 3,
+          p: 3,
+          borderRadius: 3,
+          background: `linear-gradient(135deg, ${DEEP_RED} 0%, ${MAROON} 50%, #9B1B30 100%)`,
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+        }}
+      >
+        {/* Decorative circles */}
+        <Box sx={{ position: "absolute", top: -30, right: -20, width: 140, height: 140, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.05)" }} />
+        <Box sx={{ position: "absolute", bottom: -40, right: 100, width: 100, height: 100, borderRadius: "50%", bgcolor: "rgba(255,255,255,0.03)" }} />
+        
+        <Box sx={{ position: "relative", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}>
+          <Box>
+            <Typography sx={{ fontWeight: 900, fontSize: "1.6rem", letterSpacing: -0.5, mb: 0.5 }}>
+              Welcome back, Admin
+            </Typography>
+            <Typography sx={{ opacity: 0.8, fontSize: "0.85rem" }}>
+              IIT (ISM) Dhanbad — Career Development Centre Verifier Panel
+            </Typography>
+          </Box>
+          <Box sx={{ display: "flex", gap: 1.5 }}>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => router.push("/admin/forms/jnf")}
+              sx={{
+                bgcolor: "rgba(255,255,255,0.15)",
+                color: "white",
+                textTransform: "none",
+                fontWeight: 700,
+                fontSize: "0.78rem",
+                borderRadius: 2,
+                backdropFilter: "blur(10px)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                "&:hover": { bgcolor: "rgba(255,255,255,0.25)" },
+              }}
+            >
+              Review Forms
+            </Button>
+            <Button
+              size="small"
+              variant="contained"
+              onClick={() => router.push("/admin/alumni-mentorship")}
+              sx={{
+                bgcolor: "#FCD34D",
+                color: DEEP_RED,
+                textTransform: "none",
+                fontWeight: 800,
+                fontSize: "0.78rem",
+                borderRadius: 2,
+                "&:hover": { bgcolor: "#FBBF24" },
+              }}
+            >
+              Alumni Section →
+            </Button>
+          </Box>
+        </Box>
+      </Paper>
 
       {/* Stat Cards */}
       <Grid container spacing={2} sx={{ mb: 4 }}>
@@ -179,15 +246,19 @@ export default function AdminDashboard() {
         <Grid item xs={12} lg={6}>
           <Paper elevation={0} sx={{ border: "1px solid #E5E7EB", borderRadius: 2.5, overflow: "hidden" }}>
             <Box sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F3F4F6" }}>
-              <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
-                Recent JNF Submissions
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#7C3AED" }} />
+                <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
+                  Recent JNF Submissions
+                </Typography>
+              </Box>
               <Button
                 size="small"
                 onClick={() => router.push("/admin/forms/jnf")}
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
                 sx={{ color: MAROON, textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
               >
-                View all →
+                View all
               </Button>
             </Box>
             <Table size="small">
@@ -235,15 +306,19 @@ export default function AdminDashboard() {
         <Grid item xs={12} lg={6}>
           <Paper elevation={0} sx={{ border: "1px solid #E5E7EB", borderRadius: 2.5, overflow: "hidden" }}>
             <Box sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F3F4F6" }}>
-              <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
-                Recent INF Submissions
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#0891B2" }} />
+                <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
+                  Recent INF Submissions
+                </Typography>
+              </Box>
               <Button
                 size="small"
                 onClick={() => router.push("/admin/forms/inf")}
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
                 sx={{ color: MAROON, textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
               >
-                View all →
+                View all
               </Button>
             </Box>
             <Table size="small">
@@ -287,19 +362,106 @@ export default function AdminDashboard() {
           </Paper>
         </Grid>
 
-        {/* Recent Recruiters */}
-        <Grid item xs={12}>
+        {/* Alumni Mentorship Applications */}
+        <Grid item xs={12} lg={6}>
           <Paper elevation={0} sx={{ border: "1px solid #E5E7EB", borderRadius: 2.5, overflow: "hidden" }}>
             <Box sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F3F4F6" }}>
-              <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
-                Recently Registered Recruiters
-              </Typography>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#E11D48" }} />
+                <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
+                  Alumni Mentorship Applications
+                </Typography>
+                {alumniPending > 0 && (
+                  <Chip
+                    label={`${alumniPending} new`}
+                    size="small"
+                    sx={{
+                      height: 20,
+                      fontSize: "0.62rem",
+                      fontWeight: 800,
+                      bgcolor: "#FEE2E2",
+                      color: "#991B1B",
+                      borderRadius: 10,
+                    }}
+                  />
+                )}
+              </Box>
+              <Button
+                size="small"
+                onClick={() => router.push("/admin/alumni-mentorship")}
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
+                sx={{ color: MAROON, textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
+              >
+                View all
+              </Button>
+            </Box>
+            <Table size="small">
+              <TableHead sx={{ bgcolor: "#F9FAFB" }}>
+                <TableRow>
+                  <TableCell sx={{ fontSize: "0.68rem", fontWeight: 700, color: "#6B7280", py: 1.2 }}>Alumni</TableCell>
+                  <TableCell sx={{ fontSize: "0.68rem", fontWeight: 700, color: "#6B7280" }}>Branch / Year</TableCell>
+                  <TableCell sx={{ fontSize: "0.68rem", fontWeight: 700, color: "#6B7280" }}>Status</TableCell>
+                  <TableCell sx={{ fontSize: "0.68rem", fontWeight: 700, color: "#6B7280" }} align="right">Action</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {alumniApps.map((app) => (
+                  <TableRow key={app.id} hover>
+                    <TableCell>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.78rem", color: "#111827" }}>
+                        {app.name || "—"}
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.65rem", color: "#9CA3AF" }}>
+                        {app.email || "—"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell>
+                      <Typography sx={{ fontSize: "0.75rem", color: "#374151", fontWeight: 600 }}>
+                        {app.branch || "—"}
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.65rem", color: "#9CA3AF" }}>
+                        {app.year_of_completion || "—"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell><StatusBadge status={app.status} /></TableCell>
+                    <TableCell align="right">
+                      <Tooltip title="View details">
+                        <IconButton size="small" onClick={() => router.push("/admin/alumni-mentorship")} sx={{ color: MAROON }}>
+                          <OpenInNewRoundedIcon sx={{ fontSize: 15 }} />
+                        </IconButton>
+                      </Tooltip>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {alumniApps.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} align="center" sx={{ py: 5, color: "#9CA3AF", fontSize: "0.8rem" }}>
+                      No alumni mentorship applications yet.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Paper>
+        </Grid>
+
+        {/* Recent Recruiters */}
+        <Grid item xs={12} lg={6}>
+          <Paper elevation={0} sx={{ border: "1px solid #E5E7EB", borderRadius: 2.5, overflow: "hidden" }}>
+            <Box sx={{ px: 3, py: 2, display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F3F4F6" }}>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: "#2563EB" }} />
+                <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", color: "#111827" }}>
+                  Recently Registered Recruiters
+                </Typography>
+              </Box>
               <Button
                 size="small"
                 onClick={() => router.push("/admin/recruiters")}
+                endIcon={<ArrowForwardRoundedIcon sx={{ fontSize: 14 }} />}
                 sx={{ color: MAROON, textTransform: "none", fontWeight: 700, fontSize: "0.75rem" }}
               >
-                View all →
+                View all
               </Button>
             </Box>
             <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, p: 3 }}>

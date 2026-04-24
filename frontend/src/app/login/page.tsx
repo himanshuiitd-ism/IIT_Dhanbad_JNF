@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, Suspense } from "react";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 import {
@@ -39,6 +39,7 @@ const LOCAL_ACCOUNTS = [
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { status } = useSession();
   const isAdminMode = searchParams.get("role") === "admin";
 
   const [email, setEmail]       = useState("");
@@ -47,6 +48,14 @@ function LoginForm() {
   const [error, setError]       = useState("");
   const [loading, setLoading]   = useState(false);
   const [demoOpen, setDemoOpen] = useState(true);
+
+  // Redirect if already logged in
+  useEffect(() => {
+    const localRole = localStorage.getItem("local_user_role");
+    if (status === "authenticated" || localRole) {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
 
   // Pre-fill demo creds based on mode
   const demoAccounts = isAdminMode

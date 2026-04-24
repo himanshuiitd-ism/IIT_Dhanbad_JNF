@@ -482,6 +482,13 @@ export default function JnfNewPage() {
       setSelectionMode,
       setTestType,
       setInterviewModes,
+      // Dynamic round setters — AI auto-adds rows
+      setTestRounds,
+      setInterviewRounds,
+      setPsychometricTest,
+      setMedicalTest,
+      setOtherScreening,
+      setInfrastructure,
     });
 
     setAutoFilledKeys(new Set(filledFields));
@@ -579,8 +586,6 @@ export default function JnfNewPage() {
     try {
       const id = await ensureDraftCreated();
       const fd = buildFormData();
-      // For submit, also add required fields explicitly
-      fd.append("_method", "PATCH");
       const submitRes = await fetch(`${API}/jnfs/${id}/submit`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${TOKEN()}`, Accept: "application/json" },

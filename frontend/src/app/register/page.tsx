@@ -36,6 +36,8 @@ const SURFACE = "#FBF8F8";
 const WHITE = "#FFFFFF";
 const BORDER = "rgba(0,0,0,0.1)";
 
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 const steps = ["Email Verification", "Recruiter Details", "Company Profile"];
 
 const inputSx = {
@@ -152,13 +154,15 @@ export default function RegisterPage() {
     if (!email) { setError("Please enter your company email address."); return; }
     setError(""); setLoading(true);
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/send-otp", { email });
+      const res = await axios.post(`${API_BASE}/api/auth/send-otp`, { email });
       setOtpSent(true);
       setOtpTimer(300); // 5 min countdown
       setSuccess("OTP sent to " + email);
       if (res.data.dev_otp) setDevOtp(res.data.dev_otp); // dev only
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to send OTP. Check the email and try again.");
+      const msg = err.response?.data?.message
+        || (err.code === "ERR_NETWORK" ? "Cannot connect to server. Make sure the backend is running (php artisan serve)." : "Failed to send OTP. Check the email and try again.");
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -169,7 +173,7 @@ export default function RegisterPage() {
     if (otp.length !== 6) { setError("Please enter the complete 6-digit OTP."); return; }
     setError(""); setLoading(true);
     try {
-      const res = await axios.post("http://localhost:8000/api/auth/verify-otp", { email, otp });
+      const res = await axios.post(`${API_BASE}/api/auth/verify-otp`, { email, otp });
       setRegistrationToken(res.data.token);
       setOtpVerified(true);
       setStep(1);
@@ -195,11 +199,16 @@ export default function RegisterPage() {
     }
     setLoading(true);
     try {
-      await axios.post(
-        "http://localhost:8000/api/auth/complete-profile",
+      const res = await axios.post(
+        `${API_BASE}/api/auth/complete-profile`,
         { name, designation, phone, alt_phone: altPhone, password, password_confirmation: confirmPassword },
         { headers: { Authorization: `Bearer ${registrationToken}` } }
       );
+      // Persist auth data so company-profile page doesn't redirect away
+      const token = res.data.token || registrationToken;
+      localStorage.setItem("local_token", token);
+      localStorage.setItem("local_user_role", res.data.user?.role || "recruiter");
+      localStorage.setItem("local_user_email", email);
       router.push("/company-profile");
     } catch (err: any) {
       setError(err.response?.data?.message || "Registration failed. Please try again.");

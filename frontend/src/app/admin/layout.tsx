@@ -100,7 +100,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("admin_token") || localStorage.getItem("local_token");
     const role = localStorage.getItem("local_user_role");
     if (!token && role !== "admin") {
-      // Don't hard-block — just try fetching; the session might provide the token
+      router.replace("/");
+      return;
     }
     fetchNotifs();
     const iv = setInterval(fetchNotifs, 30000); // poll every 30s
@@ -119,8 +120,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   };
 
   const logout = () => {
-    ["admin_token", "local_user_role", "local_user_name", "local_user_email", "admin_name"].forEach(k => localStorage.removeItem(k));
-    router.push("/login");
+    ["admin_token", "local_user_role", "local_user_name", "local_user_email", "admin_name", "local_token"].forEach(k => localStorage.removeItem(k));
+    router.push("/");
   };
 
   if (loading) {

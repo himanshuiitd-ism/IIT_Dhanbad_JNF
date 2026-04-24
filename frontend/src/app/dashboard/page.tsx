@@ -206,7 +206,7 @@ function RecruiterNotifPanel({ token }: { token: string }) {
 }
 
 export default function DashboardPage() {
-  const { data: session }: any = useSession();
+  const { data: session, status }: any = useSession();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("Dashboard");
@@ -294,6 +294,17 @@ export default function DashboardPage() {
     window.addEventListener("storage", handler);
     return () => window.removeEventListener("storage", handler);
   }, []);
+
+  // ── Auth guard: redirect unauthenticated users to landing page ──
+  useEffect(() => {
+    const localRole = localStorage.getItem("local_user_role");
+    // Wait until next-auth has finished loading
+    if (status === "loading") return;
+    // If not authenticated via either method, redirect to landing
+    if (status !== "authenticated" && !localRole) {
+      router.replace("/");
+    }
+  }, [status, router]);
 
   // ── Recruiter: open request-edit dialog ──────────────────────
   const openRequestDialog = (sub: Submission) => {
@@ -536,7 +547,7 @@ export default function DashboardPage() {
               <Avatar sx={{ bgcolor: MAROON, width: 30, height: 30, fontSize: "0.75rem" }}>
                 {displayName?.[0] || "C"}
               </Avatar>
-              <IconButton size="small" onClick={() => { localStorage.removeItem("local_user_role"); localStorage.removeItem("local_user_name"); localStorage.removeItem("local_user_email"); signOut({ callbackUrl: "/" }); }}><LogoutIcon sx={{ fontSize: 18, color: "#9CA3AF" }} /></IconButton>
+              <IconButton size="small" onClick={() => { localStorage.removeItem("local_user_role"); localStorage.removeItem("local_user_name"); localStorage.removeItem("local_user_email"); localStorage.removeItem("local_token"); localStorage.removeItem("admin_token"); signOut({ callbackUrl: "/" }); }}><LogoutIcon sx={{ fontSize: 18, color: "#9CA3AF" }} /></IconButton>
             </Box>
           </Toolbar>
         </AppBar>

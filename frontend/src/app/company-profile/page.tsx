@@ -88,6 +88,18 @@ export default function CompanyProfilePage() {
     }
   }, []);
 
+  // ── Auth guard: redirect unauthenticated users to landing page ──
+  // During registration flow, users have a token but no role yet,
+  // so we check for any auth indicator (role OR token).
+  useEffect(() => {
+    const localRole = localStorage.getItem("local_user_role");
+    const localToken = localStorage.getItem("local_token");
+    const authToken = localStorage.getItem("auth_token");
+    if (!localRole && !localToken && !authToken) {
+      router.replace("/");
+    }
+  }, [router]);
+
   const set = (k: keyof CompanyProfile, v: any) =>
     setProfile((p) => ({ ...p, [k]: v }));
 

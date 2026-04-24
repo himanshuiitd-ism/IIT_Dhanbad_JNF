@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -121,6 +123,16 @@ const contacts = [
 export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  // Redirect logged-in users to dashboard
+  useEffect(() => {
+    const localRole = localStorage.getItem("local_user_role");
+    if (status === "authenticated" || localRole) {
+      router.replace("/dashboard");
+    }
+  }, [status, router]);
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 60);
@@ -219,23 +231,6 @@ export default function HomePage() {
                   {l.label}
                 </Button>
               ))}
-              <Button
-                href="/login"
-                variant="contained"
-                sx={{
-                  ml: 2,
-                  bgcolor: CREAM,
-                  color: RED,
-                  fontWeight: 700,
-                  fontSize: "0.82rem",
-                  textTransform: "none",
-                  borderRadius: 2,
-                  px: 2.5,
-                  "&:hover": { bgcolor: "#ffe0a0" },
-                }}
-              >
-                Login
-              </Button>
             </Box>
 
             {/* Mobile hamburger */}
@@ -267,16 +262,6 @@ export default function HomePage() {
                 <ListItemText primary={l.label} sx={{ color: WHITE }} />
               </ListItem>
             ))}
-            <ListItem>
-              <Button
-                href="/login"
-                fullWidth
-                variant="contained"
-                sx={{ bgcolor: CREAM, color: RED, fontWeight: 700, mt: 1 }}
-              >
-                Login
-              </Button>
-            </ListItem>
           </List>
         </Box>
       </Drawer>
@@ -1070,7 +1055,7 @@ export default function HomePage() {
               <Typography fontWeight={700} mb={2} color="#FFD700" fontSize="0.82rem" letterSpacing={1}>
                 PORTAL
               </Typography>
-              {["Overview", "Why Recruit", "Recruitment Process", "Login"].map((l) => (
+              {["Overview", "Why Recruit", "Recruitment Process"].map((l) => (
                 <Typography
                   key={l}
                   variant="body2"

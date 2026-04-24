@@ -13,8 +13,9 @@ export const authOptions = {
       },
       async authorize(credentials) {
         try {
+          const API = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
           const res = await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL}/api/login`,
+            `${API}/api/login`,
             {
               email: credentials?.email,
               password: credentials?.password,

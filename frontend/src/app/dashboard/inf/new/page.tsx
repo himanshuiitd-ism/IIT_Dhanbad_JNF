@@ -350,9 +350,28 @@ export default function InfNewPage() {
   const handlePdfParse = useCallback(async (file: File, onProgress: (s: string) => void) => {
     const result = await parsePdf(file, "inf", onProgress);
     const data = result.data as InfParsedData;
-    const filledFields = applyInfParsedData(data, (fn) => {
-      const applied = fn({} as any);
-      if (applied.company_name !== undefined) setCompany(p => ({ ...p, ...applied }));
+    const filledFields = applyInfParsedData(data, {
+      setCompany,
+      setIndustrySectors,
+      setHeadHR: setHeadHr,
+      setPoc1,
+      setPoc2,
+      setInternship,
+      setSkills,
+      setGlobalCgpa,
+      setGlobalBacklogs,
+      setCurrency,
+      setStipend,
+      setStages: setStages as any,
+      setSelectionMode,
+      setTestType,
+      setInterviewModes,
+      setTestRounds,
+      setInterviewRounds,
+      setPsychometricTest,
+      setMedicalTest,
+      setOtherScreening,
+      setInfrastructure,
     });
     setAutoFilledKeys(new Set(filledFields));
     setTrackerOpen(true);
@@ -361,32 +380,87 @@ export default function InfNewPage() {
   }, []);
 
   // ── Payload & save ────────────────────────────────────────────────
-  const buildPayload = () => ({
-    ...company,
-    industry_sectors: industrySectors,
-    head_hr: headHr, poc1, poc2,
-    ...internship,
-    required_skills: skills,
-    eligibility, global_cgpa: globalCgpa, global_backlogs: globalBacklogs, gender_filter: genderFilter,
-    stipend, currency, per_prog_additional: perProgAdditional,
-    selection_stages: stages, selection_mode: selectionMode, test_type: testType,
-    interview_modes: interviewModes, test_rounds: testRounds, interview_rounds: interviewRounds,
-    psychometric_test: psychometricTest, medical_test: medicalTest,
-    infrastructure, other_screening: otherScreening,
-    declarations, signatory_name: signatory.name, signatory_designation: signatory.designation,
-    signatory_date: signatory.date, typed_signature: signatory.signature, rti_nirf_consent: rtiConsent,
-  });
+  const buildFormData = () => {
+    const fd = new FormData();
+    fd.append("company_name", company.company_name);
+    fd.append("website", company.website);
+    fd.append("postal_address", company.postal_address);
+    fd.append("employees", company.employees);
+    fd.append("sector", company.sector);
+    fd.append("category", company.category);
+    fd.append("date_of_establishment", company.date_of_establishment);
+    fd.append("annual_turnover", company.annual_turnover);
+    fd.append("linkedin", company.linkedin);
+    fd.append("hq_country", company.hq_country);
+    fd.append("nature_of_business", company.nature_of_business);
+    fd.append("description", company.description);
+    fd.append("industry_sectors", JSON.stringify(industrySectors));
+
+    if (logoFile) fd.append("logo", logoFile);
+
+    fd.append("head_hr", JSON.stringify(headHr));
+    fd.append("poc1", JSON.stringify(poc1));
+    fd.append("poc2", JSON.stringify(poc2));
+
+    fd.append("profile_name", internship.profile_name);
+    fd.append("formal_title", internship.formal_title);
+    fd.append("location", internship.location);
+    fd.append("work_mode", internship.work_mode);
+    fd.append("expected_interns", internship.expected_interns);
+    fd.append("min_interns", internship.min_interns);
+    fd.append("start_date", internship.start_date);
+    fd.append("duration_weeks", internship.duration_weeks);
+    fd.append("description", internship.description);
+    fd.append("additional_info", internship.additional_info);
+    fd.append("bond_details", internship.bond_details);
+    fd.append("registration_link", internship.registration_link);
+    fd.append("ppo_provision", internship.ppo_provision ? "1" : "0");
+    fd.append("ppo_ctc", internship.ppo_ctc);
+
+    if (jdPdf) fd.append("jd_pdf", jdPdf);
+
+    fd.append("required_skills", JSON.stringify(skills));
+    fd.append("eligibility", JSON.stringify(eligibility));
+    fd.append("global_cgpa", globalCgpa);
+    fd.append("global_backlogs", globalBacklogs ? "1" : "0");
+    fd.append("gender_filter", genderFilter);
+
+    fd.append("stipend", JSON.stringify(stipend));
+    fd.append("currency", currency);
+    fd.append("per_prog_additional", JSON.stringify(perProgAdditional));
+
+    fd.append("selection_stages", JSON.stringify(stages));
+    fd.append("selection_mode", selectionMode);
+    fd.append("test_type", testType);
+    fd.append("interview_modes", JSON.stringify(interviewModes));
+    fd.append("test_rounds", JSON.stringify(testRounds));
+    fd.append("interview_rounds", JSON.stringify(interviewRounds));
+    fd.append("psychometric_test", psychometricTest ? "1" : "0");
+    fd.append("medical_test", medicalTest ? "1" : "0");
+    fd.append("infrastructure", infrastructure);
+    fd.append("other_screening", otherScreening);
+
+    fd.append("declarations", JSON.stringify(declarations));
+    fd.append("signatory_name", signatory.name);
+    fd.append("signatory_designation", signatory.designation);
+    fd.append("signatory_date", signatory.date);
+    fd.append("typed_signature", signatory.signature);
+    fd.append("rti_nirf_consent", rtiConsent ? "1" : "0");
+
+    return fd;
+  };
 
   const saveStep = async (nextStep: number) => {
     setSaving(true);
     try {
-      const payload = buildPayload();
-      const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN()}` };
+      const fd = buildFormData();
+      const headers = { "Authorization": `Bearer ${TOKEN()}`, "Accept": "application/json" };
       if (!infId) {
-        const res = await fetch(`${API}/infs`, { method: "POST", headers, body: JSON.stringify(payload) });
+        const res = await fetch(`${API}/infs`, { method: "POST", headers, body: fd });
         if (res.ok) { const d = await res.json(); setInfId(d.data?.id || d.id); }
       } else {
-        await fetch(`${API}/infs/${infId}`, { method: "PUT", headers, body: JSON.stringify(payload) });
+        fd.append("_method", "PATCH");
+        await fetch(`${API}/infs/${infId}`, { method: "POST", headers, body: fd });
       }
       showToast("Progress saved ✓");
     } catch { /* backend offline */ }
@@ -398,18 +472,32 @@ export default function InfNewPage() {
     if (!allDeclared) { showToast("Complete all declarations & signatory fields first.", "error"); return; }
     setSubmitting(true);
     try {
-      const headers = { "Content-Type": "application/json", "Authorization": `Bearer ${TOKEN()}` };
-      const payload = { ...buildPayload(), status: "PENDING" };
-      if (!infId) {
-        await fetch(`${API}/infs`, { method: "POST", headers, body: JSON.stringify(payload) });
+      const fd = buildFormData();
+      const headers = { "Authorization": `Bearer ${TOKEN()}`, "Accept": "application/json" };
+      
+      const targetId = infId;
+      if (!targetId) {
+        const createRes = await fetch(`${API}/infs`, { method: "POST", headers, body: fd });
+        if (!createRes.ok) throw new Error("Draft creation failed");
+        const d = await createRes.json();
+        const newId = d.data?.id || d.id;
+        setInfId(newId);
+        await fetch(`${API}/infs/${newId}/submit`, { method: "POST", headers });
       } else {
-        await fetch(`${API}/infs/${infId}`, { method: "PUT", headers, body: JSON.stringify(payload) });
+        // Save current state first
+        fd.append("_method", "PATCH");
+        await fetch(`${API}/infs/${targetId}`, { method: "POST", headers, body: fd });
+        // Then submit
+        const submitRes = await fetch(`${API}/infs/${targetId}/submit`, { method: "POST", headers });
+        if (!submitRes.ok) throw new Error("Submission failed");
       }
+      
       clearDraft("inf");
       showToast("INF submitted successfully! ✓");
       setTimeout(() => router.push("/dashboard"), 1500);
-    } catch {
-      showToast("Submit failed — please retry.", "error");
+    } catch (e: any) {
+      showToast(e.message || "Submit failed — please retry.", "error");
+    } finally {
       setSubmitting(false);
     }
   };
