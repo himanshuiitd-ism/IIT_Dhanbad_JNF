@@ -20,8 +20,14 @@ export interface DraftMeta {
   id?: number | null;
 }
 
-const KEY = (type: FormType) => `cdc_draft_${type}`;
-const META_KEY = (type: FormType) => `cdc_draft_meta_${type}`;
+// Helper to get current user identifier from localStorage
+const getUserEmail = () => {
+  if (typeof window === "undefined") return "";
+  return localStorage.getItem("local_user_email") || "anonymous";
+};
+
+const KEY = (type: FormType) => `cdc_draft_${getUserEmail()}_${type}`;
+const META_KEY = (type: FormType) => `cdc_draft_meta_${getUserEmail()}_${type}`;
 
 // ─── Save ────────────────────────────────────────────────────────
 export function saveDraft(type: FormType, data: object, meta: Omit<DraftMeta, "savedAt">) {
@@ -75,6 +81,7 @@ export function useDraft(
   debounceMs = 800,
 ) {
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const userEmail = getUserEmail(); // Track user email to detect login changes
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -83,5 +90,5 @@ export function useDraft(
     }, debounceMs);
     return () => { if (timer.current) clearTimeout(timer.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [JSON.stringify(data), meta.step, meta.title, meta.completion]);
+  }, [JSON.stringify(data), meta.step, meta.title, meta.completion, userEmail]);
 }

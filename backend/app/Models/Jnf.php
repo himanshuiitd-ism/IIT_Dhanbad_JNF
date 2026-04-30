@@ -72,13 +72,20 @@ class Jnf extends Model
 
     public function isSubmitted(): bool
     {
-        return in_array($this->status, ['submitted', 'approved', 'rejected']);
+        return !in_array(strtolower($this->status), ['draft']);
+    }
+
+    public function isApprovedOrRejected(): bool
+    {
+        return in_array(strtoupper($this->status), ['APPROVED', 'REJECTED']);
     }
 
     public function canRecruiterEdit(User $user): bool
     {
         if ($user->role === 'admin') return true;
-        if ($this->isSubmitted() && $this->edit_count >= 1) return false;
-        return true;
+        // Before approval/rejection: always editable
+        if (!$this->isApprovedOrRejected()) return true;
+        // After approval/rejection: only if edit_count < 1
+        return $this->edit_count < 1;
     }
 }

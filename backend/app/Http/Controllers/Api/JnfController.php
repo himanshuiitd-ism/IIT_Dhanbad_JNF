@@ -53,12 +53,28 @@ class JnfController extends Controller
         $this->authorizeOwner($jnf);
 
         $user = Auth::user();
-        if ($jnf->isSubmitted() && !$jnf->canRecruiterEdit($user)) {
+
+        // Lock only after APPROVED or REJECTED and edit quota exhausted
+        if ($jnf->isApprovedOrRejected() && !$jnf->canRecruiterEdit($user)) {
             return response()->json(['message' => 'Edit limit reached. Request admin to unlock.'], 403);
         }
 
         $data = $this->prepareData($request);
         $jnf->update($data);
+
+        // Notify admins whenever a submitted form is edited by recruiter
+        if ($jnf->isSubmitted()) {
+            $refId   = 'JNF-' . str_pad($jnf->id, 5, '0', STR_PAD_LEFT);
+            $company = $jnf->company_name ?? 'Unknown';
+            NotificationService::notifyAdmins(
+                type:      'edit_request',
+                title:     "Recruiter edited {$refId}",
+                message:   "{$user->name} ({$user->organisation}) updated {$refId} ({$company}).",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: false  // in-app only for draft saves (avoid spam)
+            );
+        }
 
         return response()->json(['message' => 'Draft saved', 'data' => $jnf]);
     }
@@ -71,13 +87,14 @@ class JnfController extends Controller
         $this->authorizeOwner($jnf);
         $user = Auth::user();
 
-        if ($jnf->isSubmitted() && !$jnf->canRecruiterEdit($user)) {
-            return response()->json(['message' => 'Form already submitted and edit count exhausted.'], 403);
+        // Lock only if APPROVED or REJECTED AND quota exhausted
+        if ($jnf->isApprovedOrRejected() && !$jnf->canRecruiterEdit($user)) {
+            return response()->json(['message' => 'Form locked. Request admin to allow one more edit.'], 403);
         }
 
         $data = $this->prepareData($request);
-        
-        $editCount = $jnf->isSubmitted() ? $jnf->edit_count + 1 : $jnf->edit_count;
+        $isResubmission = $jnf->isSubmitted();
+        $editCount = $isResubmission ? $jnf->edit_count + 1 : $jnf->edit_count;
 
         $jnf->update(array_merge(
             $data,
@@ -92,49 +109,79 @@ class JnfController extends Controller
         $title   = $jnf->job_title ?? 'Job Profile';
         $refId   = 'JNF-' . str_pad($jnf->id, 5, '0', STR_PAD_LEFT);
 
-        // Send confirmation email to the recruiter (in-app + SMTP)
-        NotificationService::send(
-            userId:    $user->id,
-            senderId:  null,
-            type:      'system',
-            title:     'JNF Submitted Successfully',
-            message:   "Your Job Notification Form ({$refId}) for {$company} has been submitted to IIT (ISM) Dhanbad CDC. The CDC team will review your form within 2-3 working days.",
-            formType:  'jnf',
-            formId:    $jnf->id,
-            sendEmail: true,
-            emailType: 'form_submitted',
-            emailMeta: [
-                'Reference ID'  => $refId,
-                'Company'       => $company,
-                'Job Title'     => $title,
-                'Submitted On'  => now()->format('d M Y, h:i A'),
-                'cta_url'       => config('app.url') . '/dashboard',
-                'cta_label'     => 'View in Dashboard',
-            ]
-        );
-
-        // Notify all Admins (in-app + SMTP)
-        NotificationService::notifyAdmins(
-            type:      'system',
-            title:     'New JNF Submitted',
-            message:   "{$user->organisation} has submitted a new JNF: {$title}",
-            formType:  'jnf',
-            formId:    $jnf->id,
-            sendEmail: true,
-            emailType: 'form_submitted',
-            emailMeta: [
-                'Reference ID'  => $refId,
-                'Company'       => $company,
-                'Job Title'     => $title,
-                'Recruiter'     => $user->name . ' (' . $user->email . ')',
-                'Submitted On'  => now()->format('d M Y, h:i A'),
-                'cta_url'       => config('app.url') . '/admin',
-                'cta_label'     => 'Review in Admin Panel',
-            ]
-        );
+        if ($isResubmission) {
+            // Recruiter edited and re-submitted — notify admins with email
+            NotificationService::send(
+                userId:    $user->id,
+                senderId:  null,
+                type:      'system',
+                title:     "JNF Re-submitted ({$refId})",
+                message:   "You updated and re-submitted {$refId} for {$company}.",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: false
+            );
+            NotificationService::notifyAdmins(
+                type:      'edit_request',
+                title:     "Recruiter re-submitted {$refId}",
+                message:   "{$user->name} ({$user->organisation}) edited and re-submitted {$refId} ({$company}). Edit #{$editCount} used.",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: true,
+                emailType: 'edit_request',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Job Title'     => $title,
+                    'Edit Number'   => "#{$editCount}",
+                    'Recruiter'     => $user->name . ' (' . $user->email . ')',
+                    'cta_url'       => config('app.url') . '/admin',
+                    'cta_label'     => 'Review Changes',
+                ]
+            );
+        } else {
+            // First submission — confirm to recruiter, alert admins
+            NotificationService::send(
+                userId:    $user->id,
+                senderId:  null,
+                type:      'system',
+                title:     'JNF Submitted Successfully',
+                message:   "Your Job Notification Form ({$refId}) for {$company} has been submitted. The CDC team will review it within 2-3 working days.",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: true,
+                emailType: 'form_submitted',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Job Title'     => $title,
+                    'Submitted On'  => now()->format('d M Y, h:i A'),
+                    'cta_url'       => config('app.url') . '/dashboard',
+                    'cta_label'     => 'View in Dashboard',
+                ]
+            );
+            NotificationService::notifyAdmins(
+                type:      'system',
+                title:     'New JNF Submitted',
+                message:   "{$user->organisation} submitted a new JNF: {$title}",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: true,
+                emailType: 'form_submitted',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Job Title'     => $title,
+                    'Recruiter'     => $user->name . ' (' . $user->email . ')',
+                    'Submitted On'  => now()->format('d M Y, h:i A'),
+                    'cta_url'       => config('app.url') . '/admin',
+                    'cta_label'     => 'Review in Admin Panel',
+                ]
+            );
+        }
 
         return response()->json([
-            'message' => 'JNF submitted successfully. Confirmation email sent.',
+            'message' => $isResubmission ? 'JNF updated and re-submitted. Admin notified.' : 'JNF submitted successfully. Confirmation email sent.',
             'data'    => $jnf->load('user'),
         ]);
     }
@@ -148,13 +195,29 @@ class JnfController extends Controller
         $user = Auth::user();
 
         if ($user->role === 'recruiter') {
-            if ($jnf->isSubmitted() && $jnf->edit_count >= 1) {
+            if ($jnf->isApprovedOrRejected() && $jnf->edit_count >= 1) {
                 return response()->json(['message' => 'Edit limit reached. Request admin to unlock.'], 403);
             }
-            $jnf->increment('edit_count');
+            if ($jnf->isApprovedOrRejected()) {
+                $jnf->increment('edit_count');
+            }
         }
 
         $jnf->update($request->all());
+
+        // Notify admins of recruiter update
+        if ($user->role === 'recruiter' && $jnf->isSubmitted()) {
+            $refId   = 'JNF-' . str_pad($jnf->id, 5, '0', STR_PAD_LEFT);
+            $company = $jnf->company_name ?? 'Unknown';
+            NotificationService::notifyAdmins(
+                type:      'edit_request',
+                title:     "Recruiter updated {$refId}",
+                message:   "{$user->name} ({$user->organisation}) made changes to {$refId} ({$company}).",
+                formType:  'jnf',
+                formId:    $jnf->id,
+                sendEmail: false
+            );
+        }
 
         return response()->json(['message' => 'JNF updated', 'data' => $jnf]);
     }

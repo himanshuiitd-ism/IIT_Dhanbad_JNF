@@ -46,12 +46,26 @@ class InfController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if ($user->role === 'recruiter' && $inf->isSubmitted() && $inf->edit_count >= 1) {
+        if ($user->role === 'recruiter' && $inf->isApprovedOrRejected() && $inf->edit_count >= 1) {
             return response()->json(['message' => 'Edit limit reached.'], 403);
         }
 
         $data = $this->prepareData($request);
         $inf->update($data);
+
+        // Notify admins of recruiter update on submitted form
+        if ($user->role === 'recruiter' && $inf->isSubmitted()) {
+            $refId   = 'INF-' . str_pad($inf->id, 5, '0', STR_PAD_LEFT);
+            $company = $inf->company_name ?? 'Unknown';
+            NotificationService::notifyAdmins(
+                type:      'edit_request',
+                title:     "Recruiter updated {$refId}",
+                message:   "{$user->name} ({$user->organisation}) made changes to {$refId} ({$company}).",
+                formType:  'inf',
+                formId:    $inf->id,
+                sendEmail: false
+            );
+        }
 
         return response()->json([
             'message' => 'INF updated successfully',
@@ -66,14 +80,13 @@ class InfController extends Controller
             return response()->json(['message' => 'Unauthorized'], 403);
         }
 
-        if ($inf->isSubmitted() && $inf->edit_count >= 1) {
-            return response()->json(['message' => 'Form locked.'], 403);
+        if ($inf->isApprovedOrRejected() && $inf->edit_count >= 1) {
+            return response()->json(['message' => 'Form locked. Request admin to allow one more edit.'], 403);
         }
 
         $data = $this->prepareData($request);
-        
-        // Increment edit count if this is a re-submission
-        $editCount = $inf->isSubmitted() ? $inf->edit_count + 1 : $inf->edit_count;
+        $isResubmission = $inf->isSubmitted();
+        $editCount = $isResubmission ? $inf->edit_count + 1 : $inf->edit_count;
 
         $inf->update(array_merge($data, [
             'status' => 'submitted',
@@ -85,48 +98,79 @@ class InfController extends Controller
         $profile = $inf->profile_name ?? 'Internship Profile';
         $refId   = 'INF-' . str_pad($inf->id, 5, '0', STR_PAD_LEFT);
 
-        // Confirm to recruiter (in-app + SMTP)
-        NotificationService::send(
-            userId:    $user->id,
-            senderId:  null,
-            type:      'system',
-            title:     'INF Submitted Successfully',
-            message:   "Your Internship Notification Form ({$refId}) for {$company} has been submitted to IIT (ISM) Dhanbad CDC. The CDC team will review your form within 2-3 working days.",
-            formType:  'inf',
-            formId:    $inf->id,
-            sendEmail: true,
-            emailType: 'form_submitted',
-            emailMeta: [
-                'Reference ID'  => $refId,
-                'Company'       => $company,
-                'Profile'       => $profile,
-                'Submitted On'  => now()->format('d M Y, h:i A'),
-                'cta_url'       => config('app.url') . '/dashboard',
-                'cta_label'     => 'View in Dashboard',
-            ]
-        );
+        if ($isResubmission) {
+            NotificationService::send(
+                userId:    $user->id,
+                senderId:  null,
+                type:      'system',
+                title:     "INF Re-submitted ({$refId})",
+                message:   "You updated and re-submitted {$refId} for {$company}.",
+                formType:  'inf',
+                formId:    $inf->id,
+                sendEmail: false
+            );
+            NotificationService::notifyAdmins(
+                type:      'edit_request',
+                title:     "Recruiter re-submitted {$refId}",
+                message:   "{$user->name} ({$user->organisation}) edited and re-submitted {$refId} ({$company}). Edit #{$editCount} used.",
+                formType:  'inf',
+                formId:    $inf->id,
+                sendEmail: true,
+                emailType: 'edit_request',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Profile'       => $profile,
+                    'Edit Number'   => "#{$editCount}",
+                    'Recruiter'     => $user->name . ' (' . $user->email . ')',
+                    'cta_url'       => config('app.url') . '/admin',
+                    'cta_label'     => 'Review Changes',
+                ]
+            );
+        } else {
+            NotificationService::send(
+                userId:    $user->id,
+                senderId:  null,
+                type:      'system',
+                title:     'INF Submitted Successfully',
+                message:   "Your Internship Notification Form ({$refId}) for {$company} has been submitted. The CDC team will review it within 2-3 working days.",
+                formType:  'inf',
+                formId:    $inf->id,
+                sendEmail: true,
+                emailType: 'form_submitted',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Profile'       => $profile,
+                    'Submitted On'  => now()->format('d M Y, h:i A'),
+                    'cta_url'       => config('app.url') . '/dashboard',
+                    'cta_label'     => 'View in Dashboard',
+                ]
+            );
+            NotificationService::notifyAdmins(
+                type:      'system',
+                title:     'New INF Submitted',
+                message:   "{$user->organisation} submitted a new INF: {$profile}",
+                formType:  'inf',
+                formId:    $inf->id,
+                sendEmail: true,
+                emailType: 'form_submitted',
+                emailMeta: [
+                    'Reference ID'  => $refId,
+                    'Company'       => $company,
+                    'Profile'       => $profile,
+                    'Recruiter'     => $user->name . ' (' . $user->email . ')',
+                    'Submitted On'  => now()->format('d M Y, h:i A'),
+                    'cta_url'       => config('app.url') . '/admin',
+                    'cta_label'     => 'Review in Admin Panel',
+                ]
+            );
+        }
 
-        // Notify all Admins (in-app + SMTP)
-        NotificationService::notifyAdmins(
-            type:      'system',
-            title:     'New INF Submitted',
-            message:   "{$user->organisation} has submitted a new INF: {$profile}",
-            formType:  'inf',
-            formId:    $inf->id,
-            sendEmail: true,
-            emailType: 'form_submitted',
-            emailMeta: [
-                'Reference ID'  => $refId,
-                'Company'       => $company,
-                'Profile'       => $profile,
-                'Recruiter'     => $user->name . ' (' . $user->email . ')',
-                'Submitted On'  => now()->format('d M Y, h:i A'),
-                'cta_url'       => config('app.url') . '/admin',
-                'cta_label'     => 'Review in Admin Panel',
-            ]
-        );
-
-        return response()->json(['message' => 'INF submitted successfully.', 'data' => $inf->load('user')]);
+        return response()->json([
+            'message' => $isResubmission ? 'INF re-submitted. Admin notified.' : 'INF submitted successfully.',
+            'data' => $inf->load('user')
+        ]);
     }
 
     private function prepareData(Request $request)

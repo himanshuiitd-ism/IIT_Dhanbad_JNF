@@ -342,12 +342,21 @@ export default function DashboardPage() {
     if (!reqReason.trim() || !reqTarget) return;
     setReqLoading(true);
     setReqError("");
+    const token =
+      (session as any)?.accessToken ||
+      localStorage.getItem("local_token") ||
+      localStorage.getItem("admin_token") ||
+      "";
     try {
-      await axios.post("http://localhost:8000/api/edit-requests", {
-        form_type: reqTarget.type,
-        form_id: reqTarget.id,
-        reason: reqReason,
-      });
+      await axios.post(
+        "http://localhost:8000/api/edit-requests",
+        {
+          form_type: reqTarget.type,
+          form_id: reqTarget.id,
+          reason: reqReason,
+        },
+        { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+      );
       setReqDialogOpen(false);
       fetchData();
     } catch (err: any) {
@@ -675,9 +684,17 @@ export default function DashboardPage() {
                       <TableBody>
                         {submissions.map((sub) => {
                           const myReq = getEditRequestStatus(sub);
-                          const locked = userRole === "recruiter" && sub.edit_count >= 1;
+                          // Only lock AFTER the form is APPROVED or REJECTED
+                          const isApprovedOrRejected = ["APPROVED", "REJECTED"].includes(sub.status?.toUpperCase());
+                          const locked = userRole === "recruiter" && isApprovedOrRejected && sub.edit_count >= 1;
                           const hasPending = myReq?.status === "pending";
                           const hasApproved = myReq?.status === "approved";
+                          // Recruiter can freely edit if not yet approved/rejected
+                          const canEdit = userRole === "admin" || !isApprovedOrRejected || (isApprovedOrRejected && sub.edit_count < 1) || hasApproved;
+
+                          const handleEdit = () => {
+                            router.push(`/dashboard/${sub.type.toLowerCase()}/new?edit=${sub.id}`);
+                          };
 
                           return (
                             <TableRow key={`${sub.type}-${sub.id}`} hover sx={{ "&:hover": { bgcolor: "rgba(87,0,0,0.01)" } }}>
@@ -691,20 +708,22 @@ export default function DashboardPage() {
                               </TableCell>
                               <TableCell><StatusChip status={sub.status} /></TableCell>
                               <TableCell>
-                                <Typography sx={{ fontSize: "0.75rem", color: sub.edit_count >= 1 ? RED_ACCENT : "#6B7280", fontWeight: sub.edit_count >= 1 ? 700 : 400 }}>
-                                  {sub.edit_count} / 1
+                                <Typography sx={{ fontSize: "0.75rem", color: isApprovedOrRejected && sub.edit_count >= 1 ? RED_ACCENT : "#6B7280", fontWeight: isApprovedOrRejected && sub.edit_count >= 1 ? 700 : 400 }}>
+                                  {isApprovedOrRejected ? `${sub.edit_count} / 1` : "—"}
                                 </Typography>
                               </TableCell>
                               <TableCell align="right">
                                 <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 0.5 }}>
-                                  {(!locked || userRole === "admin") && (
-                                    <Tooltip title="Edit form">
-                                      <IconButton size="small" sx={{ color: MAROON }}>
+                                  {/* Edit button — visible if canEdit */}
+                                  {canEdit && (
+                                    <Tooltip title={isApprovedOrRejected ? "Edit form (1 edit allowed after approval)" : "Edit form"}>
+                                      <IconButton size="small" sx={{ color: MAROON }} onClick={handleEdit}>
                                         <EditIcon sx={{ fontSize: 14 }} />
                                       </IconButton>
                                     </Tooltip>
                                   )}
 
+                                  {/* Locked state — APPROVED/REJECTED with quota exhausted */}
                                   {userRole === "recruiter" && locked && (
                                     <>
                                       {hasPending && (
@@ -713,14 +732,8 @@ export default function DashboardPage() {
                                             sx={{ fontSize: "0.6rem", height: 20, bgcolor: "rgba(245,158,11,0.1)", color: "#B45309", fontWeight: 700, cursor: "default" }} />
                                         </Tooltip>
                                       )}
-                                      {hasApproved && (
-                                        <Tooltip title="Approved! You can edit once more">
-                                          <Chip label="Approved" size="small" icon={<CheckCircleIcon sx={{ fontSize: "10px !important" }} />}
-                                            sx={{ fontSize: "0.6rem", height: 20, bgcolor: "rgba(5,150,105,0.1)", color: "#059669", fontWeight: 700, cursor: "default" }} />
-                                        </Tooltip>
-                                      )}
                                       {(!myReq || myReq.status === "rejected") && (
-                                        <Tooltip title={myReq?.status === "rejected" ? `Rejected: ${myReq.admin_note || "No reason given"}` : "Request admin to unlock editing"}>
+                                        <Tooltip title={myReq?.status === "rejected" ? `Rejected: ${myReq.admin_note || "No reason given"}` : "Request admin to unlock 1 more edit"}>
                                           <Button
                                             size="small"
                                             variant="outlined"
