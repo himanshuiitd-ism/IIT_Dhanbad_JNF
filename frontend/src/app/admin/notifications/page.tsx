@@ -31,7 +31,7 @@ export default function AdminNotifications() {
   const [markingAll, setMarkingAll]       = useState(false);
 
   const authHeaders = useCallback(() => ({
-    Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+    Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("local_token") || ""}`,
   }), []);
 
   const fetchNotifs = useCallback(async () => {

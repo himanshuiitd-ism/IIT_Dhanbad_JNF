@@ -23,7 +23,7 @@ export default function AdminRecruiters() {
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback(() => ({
-    Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+    Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("local_token") || ""}`,
   }), []);
 
   useEffect(() => {

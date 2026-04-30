@@ -103,6 +103,7 @@ export default function AlumniMentorshipPage() {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [validationFailed, setValidationFailed] = useState(false);
   const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: "success" | "error" }>({
     open: false,
     message: "",
@@ -120,12 +121,13 @@ export default function AlumniMentorshipPage() {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
 
     if (!form.email.trim()) newErrors.email = "This is a required question";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) newErrors.email = "Please enter a valid email address";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) newErrors.email = "Please enter a valid email address";
 
     if (!form.name.trim()) newErrors.name = "This is a required question";
     if (!form.phone.trim()) newErrors.phone = "This is a required question";
-    if (!form.yearOfCompletion.trim()) newErrors.yearOfCompletion = "This is a required question";
-    else if (!/^\d{4}$/.test(form.yearOfCompletion)) newErrors.yearOfCompletion = "Please enter a valid year (e.g. 1997)";
+    const yearVal = form.yearOfCompletion.trim();
+    if (!yearVal) newErrors.yearOfCompletion = "This is a required question";
+    else if (!/^\d{4}$/.test(yearVal)) newErrors.yearOfCompletion = "Please enter a valid year (e.g. 1997)";
     if (!form.degree) newErrors.degree = "This is a required question";
     if (!form.branch) newErrors.branch = "This is a required question";
     if (!form.currentJob.trim()) newErrors.currentJob = "This is a required question";
@@ -137,7 +139,12 @@ export default function AlumniMentorshipPage() {
   };
 
   const handleSubmit = async () => {
-    if (!validate()) return;
+    setValidationFailed(false);
+    if (!validate()) {
+      setValidationFailed(true);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
 
     setSubmitting(true);
     try {
@@ -303,6 +310,17 @@ export default function AlumniMentorshipPage() {
       </Container>
 
       <Container maxWidth="sm" sx={{ pb: 6 }}>
+        {/* ── Validation error banner ────────────────────────────── */}
+        {validationFailed && (
+          <Alert
+            severity="error"
+            onClose={() => setValidationFailed(false)}
+            sx={{ mb: 2.5, borderRadius: 2, fontWeight: 600 }}
+          >
+            Please fill in all required fields before submitting.
+          </Alert>
+        )}
+
         {/* ── Header Card ───────────────────────────────────────── */}
         <Box
           sx={{

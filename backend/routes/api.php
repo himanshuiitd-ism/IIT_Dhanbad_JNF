@@ -14,6 +14,9 @@ Route::post('/alumni-mentorship', [\App\Http\Controllers\Api\AlumniMentorshipCon
 Route::post('/auth/send-otp',    [AuthController::class, 'sendOtp']);
 Route::post('/auth/verify-otp',  [AuthController::class, 'verifyOtp']);
 
+// ── Bootstrap: Create first admin (public — no token needed) ─────────
+Route::post('/init/admin', [\App\Http\Controllers\Api\InitController::class, 'createAdmin']);
+
 // ── Protected routes ─────────────────────────────────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
@@ -56,13 +59,14 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Admin routes (Simplified check - or use middleware) ───────
     Route::prefix('admin')->group(function () {
-        Route::get('/stats',                    [\App\Http\Controllers\Api\AdminController::class, 'getStats']);
-        Route::get('/users',                    [\App\Http\Controllers\Api\AdminController::class, 'getUsers']);
-        Route::get('/forms',                    [\App\Http\Controllers\Api\AdminController::class, 'getForms']);
-        Route::get('/forms/{type}/{id}',        [\App\Http\Controllers\Api\AdminController::class, 'getFormDetails']);
-        Route::patch('/forms/{type}/{id}',      [\App\Http\Controllers\Api\AdminController::class, 'updateFormStatus']);
-        Route::post('/communicate',             [\App\Http\Controllers\Api\AdminController::class, 'sendCommunication']);
-        Route::get('/forms/{type}/{id}/comms',  [\App\Http\Controllers\Api\AdminController::class, 'getFormCommunications']);
+        Route::get('/stats',                     [\App\Http\Controllers\Api\AdminController::class, 'getStats']);
+        Route::get('/users',                     [\App\Http\Controllers\Api\AdminController::class, 'getUsers']);
+        Route::get('/forms',                     [\App\Http\Controllers\Api\AdminController::class, 'getForms']);
+        Route::get('/forms/{type}/{id}',         [\App\Http\Controllers\Api\AdminController::class, 'getFormDetails']);
+        Route::patch('/forms/{type}/{id}',       [\App\Http\Controllers\Api\AdminController::class, 'updateFormStatus']);
+        Route::put('/forms/{type}/{id}/edit',    [\App\Http\Controllers\Api\AdminController::class, 'adminEditForm']);
+        Route::post('/communicate',              [\App\Http\Controllers\Api\AdminController::class, 'sendCommunication']);
+        Route::get('/forms/{type}/{id}/comms',   [\App\Http\Controllers\Api\AdminController::class, 'getFormCommunications']);
     });
 
     // ── Alumni Mentorship (admin management) ───────────────────────────
@@ -74,7 +78,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // ── AI PDF Parser route ────────────────────────────────────────
     Route::post('/parse-pdf', [\App\Http\Controllers\Api\PdfParserController::class, 'parse']);
 
-    // ── System Initialization ──────────────────────────────────────
-    Route::post('/init', [\App\Http\Controllers\Api\InitController::class, 'initialize']);
-    Route::get('/init',  [\App\Http\Controllers\Api\InitController::class, 'getMasterData']);
+    // ── System Initialization (protected) ─────────────────────────
+    Route::post('/init',  [\App\Http\Controllers\Api\InitController::class, 'initialize']);
+    Route::get('/init',   [\App\Http\Controllers\Api\InitController::class, 'getMasterData']);
 });

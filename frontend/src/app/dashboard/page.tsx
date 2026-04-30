@@ -244,10 +244,17 @@ export default function DashboardPage() {
   const pendingAdminCount = editRequests.filter(r => r.status === "pending").length;
 
   const fetchData = useCallback(async () => {
+    const token =
+      (session as any)?.accessToken ||
+      localStorage.getItem("local_token") ||
+      localStorage.getItem("admin_token") ||
+      "";
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
     try {
       const [jnfRes, infRes] = await Promise.all([
-        axios.get("http://localhost:8000/api/jnfs"),
-        axios.get("http://localhost:8000/api/infs"),
+        axios.get("http://localhost:8000/api/jnfs", { headers }),
+        axios.get("http://localhost:8000/api/infs", { headers }),
       ]);
       setSubmissions([
         ...jnfRes.data.map((j: any) => ({ ...j, type: "JNF" })),
@@ -257,10 +264,10 @@ export default function DashboardPage() {
 
     try {
       if (userRole === "admin") {
-        const res = await axios.get("http://localhost:8000/api/edit-requests");
+        const res = await axios.get("http://localhost:8000/api/edit-requests", { headers });
         setEditRequests(res.data);
       } else {
-        const res = await axios.get("http://localhost:8000/api/edit-requests/mine");
+        const res = await axios.get("http://localhost:8000/api/edit-requests/mine", { headers });
         setMyEditRequests(res.data);
       }
     } catch { /* silent */ }
@@ -268,19 +275,26 @@ export default function DashboardPage() {
     // Fetch unread notification count for recruiter
     if (userRole === "recruiter") {
       try {
-        const nRes = await axios.get("http://localhost:8000/api/notifications");
+        const nRes = await axios.get("http://localhost:8000/api/notifications", { headers });
         setNotifCount(nRes.data.filter((n: any) => !n.is_read).length);
       } catch { /* silent */ }
     }
-  }, [userRole]);
+  }, [userRole, session]);
 
-  useEffect(() => { if (session) fetchData(); }, [session, fetchData]);
+  useEffect(() => {
+    const localToken = localStorage.getItem("local_token") || localStorage.getItem("admin_token");
+    if (session || localToken) fetchData();
+  }, [session, fetchData]);
 
   // Poll notifications every 30s
   useEffect(() => {
-    if (!session || userRole !== "recruiter") return;
+    if (userRole !== "recruiter") return;
     const iv = setInterval(() => {
-      axios.get("http://localhost:8000/api/notifications")
+      const token = (session as any)?.accessToken || localStorage.getItem("local_token") || "";
+      if (!token) return;
+      axios.get("http://localhost:8000/api/notifications", {
+        headers: { Authorization: `Bearer ${token}` },
+      })
         .then((r: import("axios").AxiosResponse) => setNotifCount(r.data.filter((n: any) => !n.is_read).length))
         .catch(() => {});
     }, 30000);
@@ -303,8 +317,14 @@ export default function DashboardPage() {
     // If not authenticated via either method, redirect to landing
     if (status !== "authenticated" && !localRole) {
       router.replace("/");
+      return;
     }
-  }, [status, router]);
+    // Admins always use /admin — redirect them if they land here
+    const role = session?.user?.role || localRole;
+    if (role === "admin") {
+      router.replace("/admin");
+    }
+  }, [status, router, session]);
 
   // ── Recruiter: open request-edit dialog ──────────────────────
   const openRequestDialog = (sub: Submission) => {

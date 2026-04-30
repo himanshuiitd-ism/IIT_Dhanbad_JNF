@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Department;
 use App\Models\Course;
 use App\Models\Branch;
+use App\Models\User;
 use Illuminate\Support\Facades\DB;
 
 class InitController extends Controller
@@ -99,6 +101,46 @@ class InitController extends Controller
             'courses'     => Course::where('status', 1)->get(),
             'branches'    => Branch::where('status', 1)->get(),
         ]);
+    }
+
+    /**
+     * Create an admin user.
+     */
+    public function createAdmin(Request $request)
+    {
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|email|unique:users,email',
+            'password'     => 'required|string|min:8|confirmed',
+            'organisation' => 'nullable|string|max:255',
+            'phone'        => 'nullable|string|max:20',
+            'designation'  => 'nullable|string|max:255',
+        ]);
+
+        $admin = User::create([
+            'name'                  => $request->name,
+            'email'                 => $request->email,
+            'password'              => Hash::make($request->password),
+            'role'                  => 'admin',
+            'organisation'          => $request->organisation ?? 'IIT (ISM) Dhanbad',
+            'phone'                 => $request->phone,
+            'designation'           => $request->designation ?? 'Administrator',
+            'email_verified_at'     => now(),        // pre-verified
+            'email_verified_status' => 'verified',
+            'profile_complete'      => true,
+        ]);
+
+        return response()->json([
+            'message' => 'Admin user created successfully.',
+            'admin'   => [
+                'id'           => $admin->id,
+                'name'         => $admin->name,
+                'email'        => $admin->email,
+                'role'         => $admin->role,
+                'organisation' => $admin->organisation,
+                'designation'  => $admin->designation,
+            ],
+        ], 201);
     }
 
     /**

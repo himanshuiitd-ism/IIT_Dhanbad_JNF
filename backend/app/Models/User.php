@@ -22,6 +22,7 @@ class User extends Authenticatable
         'alt_phone',
         'designation',
         'role',
+        'email_verified_at',
         'email_verified_status',
         'profile_complete',
     ];

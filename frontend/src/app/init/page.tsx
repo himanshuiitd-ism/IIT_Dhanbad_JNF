@@ -1,8 +1,6 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import api from "@/lib/api";
 import {
   Box,
@@ -28,6 +26,8 @@ import RestoreIcon from "@mui/icons-material/Restore";
 import SchoolIcon from "@mui/icons-material/School";
 import BusinessIcon from "@mui/icons-material/Business";
 import AccountTreeIcon from "@mui/icons-material/AccountTree";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import PersonAddIcon from "@mui/icons-material/PersonAdd";
 
 // ─── Design Tokens ───────────────────────────────────────────────
 const MAROON = "#850000ff";
@@ -37,19 +37,25 @@ const WHITE  = "#FFFFFF";
 const SURFACE = "#FBF8F8";
 
 export default function InitPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [initStatus, setInitStatus] = useState<any>(null);
   const [masterData, setMasterData] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isAdmin = (session?.user as any)?.role === "admin";
+  // ── Create Admin state ───────────────────────────────────────────
+  const [adminForm, setAdminForm] = useState({
+    name: "", email: "", password: "", password_confirmation: "",
+    designation: "Administrator", organisation: "IIT (ISM) Dhanbad", phone: "",
+  });
+  const [adminLoading, setAdminLoading] = useState(false);
+  const [adminError, setAdminError]   = useState<string | null>(null);
+  const [adminSuccess, setAdminSuccess] = useState<string | null>(null);
+  const [showAdminForm, setShowAdminForm] = useState(false);
 
   // Fetch current master data status
   const fetchStatus = async () => {
     try {
-      const res = await api.get("/init");
+      const res = await api.get("/api/init");
       setMasterData(res.data);
     } catch (err) {
       console.error("Failed to fetch master data", err);
@@ -57,18 +63,14 @@ export default function InitPage() {
   };
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login");
-    } else if (status === "authenticated") {
-      fetchStatus();
-    }
-  }, [status, router]);
+    fetchStatus();
+  }, []);
 
   const handleInitialize = async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.post("/init");
+      const res = await api.post("/api/init");
       setInitStatus(res.data);
       fetchStatus();
     } catch (err: any) {
@@ -78,26 +80,27 @@ export default function InitPage() {
     }
   };
 
-  if (status === "loading") {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", bgcolor: SURFACE }}>
-        <CircularProgress sx={{ color: MAROON }} />
-      </Box>
-    );
-  }
+  const handleCreateAdmin = async () => {
+    setAdminLoading(true);
+    setAdminError(null);
+    setAdminSuccess(null);
+    try {
+      const res = await api.post("/api/init/admin", adminForm);
+      setAdminSuccess(`Admin "${res.data.admin.name}" (${res.data.admin.email}) created successfully!`);
+      setAdminForm({ name: "", email: "", password: "", password_confirmation: "", designation: "Administrator", organisation: "IIT (ISM) Dhanbad", phone: "" });
+      setShowAdminForm(false);
+    } catch (err: any) {
+      const errs = err.response?.data?.errors;
+      if (errs) {
+        setAdminError(Object.values(errs).flat().join(" "));
+      } else {
+        setAdminError(err.response?.data?.message || "Failed to create admin.");
+      }
+    } finally {
+      setAdminLoading(false);
+    }
+  };
 
-  if (!isAdmin && status === "authenticated") {
-    return (
-      <Container maxWidth="sm" sx={{ mt: 10 }}>
-        <Alert severity="error" variant="filled">
-          Unauthorized Access. This page is only accessible by administrators.
-        </Alert>
-        <Button onClick={() => router.push("/dashboard")} sx={{ mt: 2, color: MAROON }}>
-          Return to Dashboard
-        </Button>
-      </Container>
-    );
-  }
 
   return (
     <Box sx={{ minHeight: "100vh", bgcolor: SURFACE, pb: 10 }}>
@@ -188,6 +191,89 @@ export default function InitPage() {
                       <Typography variant="caption" sx={{ fontWeight: 700 }}>Branches</Typography>
                     </Grid>
                   </Grid>
+                </Box>
+              )}
+            </Paper>
+          </Grid>
+
+          {/* ── Create Admin Card ───────────────────────────────── */}
+          <Grid size={{ xs: 12, md: 8 }}>
+            <Paper sx={{ p: 4, borderRadius: 4, border: "1px solid rgba(133,0,0,0.15)" }}>
+              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mb: showAdminForm ? 3 : 0 }}>
+                <Typography variant="h5" sx={{ fontWeight: 800, display: "flex", alignItems: "center", gap: 1.5 }}>
+                  <AdminPanelSettingsIcon sx={{ color: RED }} />
+                  Create Admin User
+                </Typography>
+                <Button
+                  variant={showAdminForm ? "outlined" : "contained"}
+                  startIcon={<PersonAddIcon />}
+                  onClick={() => { setShowAdminForm(v => !v); setAdminError(null); setAdminSuccess(null); }}
+                  sx={{
+                    bgcolor: showAdminForm ? "transparent" : RED,
+                    color: showAdminForm ? RED : WHITE,
+                    borderColor: RED,
+                    fontWeight: 700,
+                    textTransform: "none",
+                    "&:hover": { bgcolor: showAdminForm ? "rgba(185,0,0,0.06)" : MAROON, borderColor: MAROON },
+                  }}
+                >
+                  {showAdminForm ? "Cancel" : "Create Admin"}
+                </Button>
+              </Box>
+
+              {adminSuccess && (
+                <Alert severity="success" sx={{ mt: 2, borderRadius: 2 }}>{adminSuccess}</Alert>
+              )}
+
+              {showAdminForm && (
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Typography variant="body2" color="text.secondary">
+                    Creates a fully verified admin account with immediate login access. Fields marked * are required.
+                  </Typography>
+
+                  <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                    {([
+                      { key: "name",                  label: "Full Name *",            type: "text",     placeholder: "Dr. Rajesh Kumar" },
+                      { key: "email",                 label: "Email Address *",        type: "email",    placeholder: "admin@iitism.ac.in" },
+                      { key: "password",              label: "Password * (min 8)",     type: "password", placeholder: "••••••••" },
+                      { key: "password_confirmation", label: "Confirm Password *",     type: "password", placeholder: "••••••••" },
+                      { key: "designation",           label: "Designation",            type: "text",     placeholder: "Administrator" },
+                      { key: "phone",                 label: "Phone",                  type: "text",     placeholder: "+91 XXXXXXXXXX" },
+                    ] as const).map(f => (
+                      <Box key={f.key}>
+                        <Typography variant="caption" sx={{ fontWeight: 700, color: "text.secondary", mb: 0.5, display: "block" }}>
+                          {f.label}
+                        </Typography>
+                        <input
+                          type={f.type}
+                          value={(adminForm as any)[f.key]}
+                          onChange={e => setAdminForm(prev => ({ ...prev, [f.key]: e.target.value }))}
+                          placeholder={f.placeholder}
+                          style={{
+                            width: "100%", padding: "10px 12px",
+                            border: "1px solid rgba(0,0,0,0.18)", borderRadius: 8,
+                            fontSize: 14, fontFamily: "inherit",
+                            outline: "none", boxSizing: "border-box",
+                          }}
+                        />
+                      </Box>
+                    ))}
+                  </Box>
+
+                  {adminError && (
+                    <Alert severity="error" sx={{ borderRadius: 2 }}>{adminError}</Alert>
+                  )}
+
+                  <Button
+                    variant="contained"
+                    size="large"
+                    onClick={handleCreateAdmin}
+                    disabled={adminLoading || !adminForm.name || !adminForm.email || !adminForm.password || !adminForm.password_confirmation}
+                    startIcon={adminLoading ? <CircularProgress size={18} color="inherit" /> : <PersonAddIcon />}
+                    sx={{ bgcolor: RED, alignSelf: "flex-start", px: 4, py: 1.5, fontWeight: 700, textTransform: "none", "&:hover": { bgcolor: MAROON } }}
+                  >
+                    {adminLoading ? "Creating..." : "Create Admin Account"}
+                  </Button>
                 </Box>
               )}
             </Paper>

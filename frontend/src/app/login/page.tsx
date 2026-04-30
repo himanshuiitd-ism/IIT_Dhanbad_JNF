@@ -49,10 +49,10 @@ function LoginForm() {
   const [loading, setLoading]   = useState(false);
   const [demoOpen, setDemoOpen] = useState(true);
 
-  // Redirect if already logged in
+  // Only redirect if next-auth has an active verified session.
+  // Do NOT redirect based on localStorage alone — it may be stale from a previous login.
   useEffect(() => {
-    const localRole = localStorage.getItem("local_user_role");
-    if (status === "authenticated" || localRole) {
+    if (status === "authenticated") {
       router.replace("/dashboard");
     }
   }, [status, router]);
@@ -66,6 +66,13 @@ function LoginForm() {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    // ── Always wipe old session before logging in a new user ──────
+    localStorage.removeItem("local_user_role");
+    localStorage.removeItem("local_user_name");
+    localStorage.removeItem("local_user_email");
+    localStorage.removeItem("local_token");
+    localStorage.removeItem("admin_token");
 
     // ── Local bypass (works without backend) ──────────────────
     const local = LOCAL_ACCOUNTS.find(
@@ -99,8 +106,10 @@ function LoginForm() {
 
       setLoading(false);
 
-      // Recruiters: redirect to company profile page if not yet filled
-      if (local.role === "recruiter") {
+      // Admins go to /admin, recruiters go to /dashboard
+      if (local.role === "admin") {
+        router.push("/admin");
+      } else if (local.role === "recruiter") {
         const hasProfile = !!localStorage.getItem("recruiter_company_profile");
         router.push(hasProfile ? "/dashboard" : "/company-profile");
       } else {
@@ -110,12 +119,36 @@ function LoginForm() {
     }
 
     // ── Real backend auth ─────────────────────────────────────
-    const result = await signIn("credentials", { email, password, redirect: false });
-    setLoading(false);
-    if (result?.error) {
-      setError("The credentials provided do not match our records.");
-    } else {
-      router.push("/dashboard");
+    try {
+      const res = await fetch("http://localhost:8000/api/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ email: email.trim(), password }),
+      });
+      if (!res.ok) {
+        setError("The credentials provided do not match our records.");
+        setLoading(false);
+        return;
+      }
+      const data = await res.json();
+      const token = data.token || data.access_token;
+      const role  = data.user?.role || "recruiter";
+      const name  = data.user?.name || email;
+
+      if (token) {
+        localStorage.setItem("local_token", token);
+        localStorage.setItem("local_user_role", role);
+        localStorage.setItem("local_user_name", name);
+        localStorage.setItem("local_user_email", email.trim());
+        if (role === "admin") localStorage.setItem("admin_token", token);
+      }
+
+      setLoading(false);
+      // Admins go to /admin, everyone else to /dashboard
+      router.push(role === "admin" ? "/admin" : "/dashboard");
+    } catch {
+      setError("Could not reach the server. Please try again.");
+      setLoading(false);
     }
   };
 

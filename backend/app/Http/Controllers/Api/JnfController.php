@@ -216,13 +216,37 @@ class JnfController extends Controller
             'selection_stages', 'test_rounds', 'interview_rounds', 'interview_modes',
             'declarations',
         ];
-
         foreach ($jsonFields as $field) {
             if (isset($data[$field]) && is_string($data[$field])) {
                 $decoded = json_decode($data[$field], true);
                 if (json_last_error() === JSON_ERROR_NONE) {
                     $data[$field] = $decoded;
                 }
+            }
+        }
+
+        // Convert "true"/"false" strings → 1/0 for MySQL tinyint boolean columns
+        $boolFields = ['psychometric_test', 'medical_test', 'rti_nirf_consent'];
+        foreach ($boolFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = filter_var($data[$field], FILTER_VALIDATE_BOOLEAN) ? 1 : 0;
+            }
+        }
+
+        // Sanitize date fields — take only YYYY-MM-DD part, null if empty
+        $dateFields = ['date_of_establishment', 'signatory_date'];
+        foreach ($dateFields as $field) {
+            if (isset($data[$field])) {
+                $val = trim($data[$field]);
+                $data[$field] = ($val === '' || $val === '0000-00-00') ? null : substr($val, 0, 10);
+            }
+        }
+
+        // Cast numeric fields to int; null if empty
+        $intFields = ['expected_hires', 'min_hires'];
+        foreach ($intFields as $field) {
+            if (isset($data[$field])) {
+                $data[$field] = ($data[$field] !== '' && $data[$field] !== null) ? (int) $data[$field] : null;
             }
         }
 

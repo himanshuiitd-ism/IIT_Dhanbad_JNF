@@ -26,18 +26,18 @@ import {
 } from "@mui/material";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import {
-  PeopleAltRounded,
-  DescriptionRounded,
-  NotificationsRounded,
-  LogoutRounded,
-  MenuRounded,
-  CheckCircleRounded,
-  CancelRounded,
-  AccessTimeRounded,
-  MarkEmailReadRounded,
-  EditNoteRounded,
-  ArticleRounded,
-  GroupsRounded
+  PeopleAltRounded as PeopleAltRoundedIcon,
+  DescriptionRounded as DescriptionRoundedIcon,
+  NotificationsRounded as NotificationsRoundedIcon,
+  LogoutRounded as LogoutRoundedIcon,
+  MenuRounded as MenuRoundedIcon,
+  CheckCircleRounded as CheckCircleRoundedIcon,
+  CancelRounded as CancelRoundedIcon,
+  AccessTimeRounded as AccessTimeRoundedIcon,
+  MarkEmailReadRounded as MarkEmailReadRoundedIcon,
+  EditNoteRounded as EditNoteRoundedIcon,
+  ArticleRounded as ArticleRoundedIcon,
+  GroupsRounded as GroupsRoundedIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 

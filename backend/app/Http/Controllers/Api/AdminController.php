@@ -8,8 +8,9 @@ use App\Models\Jnf;
 use App\Models\Inf;
 use App\Models\Notification;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class AdminController extends Controller
 {
@@ -98,13 +99,91 @@ class AdminController extends Controller
             'user_id'   => $form->user_id,
             'sender_id' => Auth::id(),
             'type'      => 'status_update',
-            'title'     => 'Form ' . $request->status,
-            'message'   => "Your " . strtoupper($type) . " for " . $form->company_name . " has been " . strtolower($request->status) . ". " . ($request->note ?? ""),
+            'title'     => 'Form ' . ucfirst(strtolower($request->status)),
+            'message'   => "Your " . strtoupper($type) . " for " . ($form->company_name ?? 'your company') . " has been " . strtolower($request->status) . ". " . ($request->note ?? ""),
             'form_type' => $type,
             'form_id'   => $id,
         ]);
 
         return response()->json(['message' => 'Status updated successfully', 'form' => $form]);
+    }
+
+    /**
+     * Admin directly edits form fields (works regardless of form status).
+     * Sends a notification + email to the recruiter on every save.
+     */
+    public function adminEditForm(Request $request, $type, $id)
+    {
+        $admin = Auth::user();
+        if ($admin->role !== 'admin') {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        $form = ($type === 'jnf') ? Jnf::with('user')->find($id) : Inf::with('user')->find($id);
+        if (!$form) return response()->json(['message' => 'Form not found'], 404);
+
+        // Fields the admin must not overwrite
+        $protected = ['id', 'user_id', 'created_at', 'updated_at', 'edit_count', 'status'];
+        $data = collect($request->except($protected))->filter(fn($v) => $v !== null)->toArray();
+
+        if (empty($data)) {
+            return response()->json(['message' => 'No fields provided to update'], 422);
+        }
+
+        $form->fill($data);
+        $form->save();
+
+        $recruiter   = $form->user;
+        $formLabel   = strtoupper($type);
+        $company     = $form->company_name ?? 'your company';
+        $titleField  = ($type === 'jnf') ? 'job_title' : 'internship_designation';
+        $title       = $form->{$titleField} ?? 'Internship/Job Profile';
+        
+        $editedFields = implode(', ', array_map(fn($k) => str_replace('_', ' ', $k), array_keys($data)));
+        $note        = $request->input('admin_note', '');
+
+        // In-app notification to recruiter
+        try {
+            Notification::create([
+                'user_id'   => $form->user_id,
+                'sender_id' => $admin->id,
+                'type'      => 'edit_request',
+                'title'     => "Admin edited your {$formLabel}",
+                'message'   => "CDC Admin ({$admin->name}) made changes to your {$formLabel} for {$company} ({$title}). "
+                             . "Fields updated: {$editedFields}."
+                             . ($note ? " Note: {$note}" : ""),
+                'form_type' => $type,
+                'form_id'   => $id,
+            ]);
+        } catch (\Throwable $e) {
+            \Log::warning('Admin edit notification failed: ' . $e->getMessage());
+        }
+
+        // Email notification to recruiter
+        if ($recruiter) {
+            try {
+                Mail::raw(
+                    "Dear {$recruiter->name},\n\n"
+                    . "CDC Admin has made edits to your {$formLabel} (ID: {$formLabel}-" . str_pad($id, 5, '0', STR_PAD_LEFT) . ") for {$company}.\n\n"
+                    . "Job/Internship Title: {$title}\n"
+                    . "Fields updated: {$editedFields}.\n"
+                    . ($note ? "Admin note: {$note}\n" : "")
+                    . "\nPlease log in to the CDC Portal grid to review the changes.\n\n"
+                    . "Regards,\nCDC Team, IIT (ISM) Dhanbad",
+                    fn($mail) => $mail
+                        ->to($recruiter->email)
+                        ->subject("[{$formLabel}] Admin made edits — IIT (ISM) Dhanbad CDC")
+                        ->from(config('mail.from.address'), 'CDC IIT (ISM) Dhanbad')
+                );
+            } catch (\Throwable $e) {
+                \Log::warning('Admin edit email failed: ' . $e->getMessage());
+            }
+        }
+
+        return response()->json([
+            'message' => 'Form updated by admin. Recruiter notified.',
+            'form'    => $form->fresh(['user']),
+        ]);
     }
 
     /**

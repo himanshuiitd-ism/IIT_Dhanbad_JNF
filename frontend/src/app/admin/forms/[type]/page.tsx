@@ -42,7 +42,7 @@ export default function AdminFormsList() {
   const [loading, setLoading] = useState(true);
 
   const authHeaders = useCallback(() => ({
-    Authorization: `Bearer ${localStorage.getItem("admin_token") || ""}`,
+    Authorization: `Bearer ${localStorage.getItem("admin_token") || localStorage.getItem("local_token") || ""}`,
   }), []);
 
   const fetchForms = useCallback(async () => {

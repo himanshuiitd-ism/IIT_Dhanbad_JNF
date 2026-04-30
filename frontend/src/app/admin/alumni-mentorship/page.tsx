@@ -29,13 +29,11 @@ import {
   Divider,
   Grid,
 } from "@mui/material";
-import {
-  Visibility as VisibilityRoundedIcon,
-  Delete as DeleteRoundedIcon,
-  Groups as GroupsRoundedIcon,
-  LinkedIn as LinkedInIcon,
-  Refresh as RefreshRoundedIcon,
-} from "@mui/icons-material";
+import VisibilityRoundedIcon from "@mui/icons-material/Visibility";
+import DeleteRoundedIcon from "@mui/icons-material/Delete";
+import GroupsRoundedIcon from "@mui/icons-material/Groups";
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import RefreshRoundedIcon from "@mui/icons-material/Refresh";
 import axios from "axios";
 
 const MAROON = "#7B0000";
@@ -114,14 +112,16 @@ export default function AdminAlumniMentorshipPage() {
     try {
       const token = getToken();
       const params = filterStatus !== "all" ? { status: filterStatus } : {};
-      const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api";
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/api$/, "") + "/api";
       const res = await axios.get(`${API_BASE}/alumni-mentorship`, {
         headers: { Authorization: `Bearer ${token}` },
         params,
       });
       setApplications(res.data);
     } catch (e: any) {
-      setError(e.response?.data?.message || "Failed to load applications. Is the backend running?");
+      const status = e.response?.status;
+      const msg = e.response?.data?.message || e.message || "Failed to load applications.";
+      setError(status === 401 ? "Session expired — please log in again." : status === 403 ? "Unauthorized. Admin access required." : msg);
     } finally {
       setLoading(false);
     }
@@ -141,7 +141,8 @@ export default function AdminAlumniMentorshipPage() {
     setUpdatingId(id);
     try {
       const token = getToken();
-      await axios.patch(`http://localhost:8000/api/alumni-mentorship/${id}`, { status }, {
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/api$/, "") + "/api";
+      await axios.patch(`${API_BASE}/alumni-mentorship/${id}`, { status }, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplications(prev => prev.map(a => a.id === id ? { ...a, status } : a));
@@ -158,7 +159,8 @@ export default function AdminAlumniMentorshipPage() {
     setDeleting(true);
     try {
       const token = getToken();
-      await axios.delete(`http://localhost:8000/api/alumni-mentorship/${deleteTarget.id}`, {
+      const API_BASE = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/api$/, "") + "/api";
+      await axios.delete(`${API_BASE}/alumni-mentorship/${deleteTarget.id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setApplications(prev => prev.filter(a => a.id !== deleteTarget.id));
