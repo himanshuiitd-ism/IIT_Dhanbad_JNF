@@ -38,6 +38,7 @@ import {
   EditNoteRounded as EditNoteRoundedIcon,
   ArticleRounded as ArticleRoundedIcon,
   GroupsRounded as GroupsRoundedIcon,
+  EmailRounded as EmailRoundedIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 
@@ -62,6 +63,7 @@ const navLinks = [
   { label: "INF Reviews", path: "/admin/forms/inf", icon: <DescriptionRoundedIcon /> },
   { label: "Alumni Mentorship", path: "/admin/alumni-mentorship", icon: <GroupsRoundedIcon /> },
   { label: "Notifications", path: "/admin/notifications", icon: <NotificationsRoundedIcon /> },
+  { label: "SMTP Settings", path: "/admin/smtp", icon: <EmailRoundedIcon /> },
 ];
 
 export default function AdminLayout({ children }: { children: ReactNode }) {

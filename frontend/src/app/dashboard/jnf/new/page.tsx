@@ -913,7 +913,7 @@ export default function JnfNewPage() {
                 </Box>
                 {SALARY_PROGS.map((prog, idx) => (
                   <Accordion key={prog} defaultExpanded={idx === 0} disableGutters elevation={0} sx={{ border: `1px solid ${BORDER}`, borderTop: 0, "&:before": { display: "none" } }}>
-                    <AccordionSummary expandIcon={<ExpandMoreIcon />}
+                    <AccordionSummary expandIcon={<KeyboardArrowDownIcon />}
                       sx={{ bgcolor: idx === 0 ? "rgba(87,0,0,0.05)" : "#F9FAFB", "& .MuiAccordionSummary-content": { my: 0.5 } }}>
                       <Typography sx={{ fontWeight: 700, fontSize: "0.8rem", color: MAROON }}>{prog}</Typography>
                     </AccordionSummary>
@@ -1271,7 +1271,7 @@ export default function JnfNewPage() {
                 <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => setStep(5)} sx={{ textTransform: "none", color: MAROON, borderColor: MAROON, fontWeight: 700, "&:hover": { bgcolor: "rgba(87,0,0,0.04)" } }}>
                   ← Go Back to Edit
                 </Button>
-                <Button variant="contained" endIcon={submitting ? <CircularProgress size={14} sx={{ color: WHITE }} /> : <SendIcon />}
+                <Button variant="contained" endIcon={submitting ? <CircularProgress size={14} sx={{ color: WHITE }} /> : <SendRoundedIcon />}
                   disabled={!allDeclared || submitting}
                   onClick={handleSubmit}
                   sx={{ textTransform: "none", bgcolor: "#14532D", color: WHITE, fontWeight: 900, px: 4, "&:hover": { bgcolor: "#166534" }, "&.Mui-disabled": { bgcolor: "#D1D5DB" } }}>

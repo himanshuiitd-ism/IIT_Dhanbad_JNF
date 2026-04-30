@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\Jnf;
 use App\Models\Inf;
 use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -94,16 +95,36 @@ class AdminController extends Controller
         $form->status = strtoupper($request->status);
         $form->save();
 
-        // Create notification for Recruiter
-        Notification::create([
-            'user_id'   => $form->user_id,
-            'sender_id' => Auth::id(),
-            'type'      => 'status_update',
-            'title'     => 'Form ' . ucfirst(strtolower($request->status)),
-            'message'   => "Your " . strtoupper($type) . " for " . ($form->company_name ?? 'your company') . " has been " . strtolower($request->status) . ". " . ($request->note ?? ""),
-            'form_type' => $type,
-            'form_id'   => $id,
-        ]);
+        $formLabel   = strtoupper($type);
+        $company     = $form->company_name ?? 'your company';
+        $statusLower = strtolower($request->status);
+        $statusTitle = ucfirst($statusLower);
+        $note        = $request->note ?? '';
+        $refId       = $formLabel . '-' . str_pad($id, 5, '0', STR_PAD_LEFT);
+
+        // Determine email type for template badge
+        $emailType = $statusLower === 'approved' ? 'approved' : ($statusLower === 'rejected' ? 'rejected' : 'status_update');
+
+        // Notify recruiter (in-app + SMTP email)
+        NotificationService::send(
+            userId:    $form->user_id,
+            senderId:  Auth::id(),
+            type:      'status_update',
+            title:     "Form {$statusTitle}",
+            message:   "Your {$formLabel} for {$company} has been {$statusLower}." . ($note ? " Note: {$note}" : ""),
+            formType:  $type,
+            formId:    (int) $id,
+            sendEmail: true,
+            emailType: $emailType,
+            emailMeta: [
+                'Reference ID' => $refId,
+                'Company'      => $company,
+                'Status'       => strtoupper($request->status),
+                'Admin Note'   => $note ?: 'None',
+                'cta_url'      => config('app.url') . '/dashboard',
+                'cta_label'    => 'View in Dashboard',
+            ]
+        );
 
         return response()->json(['message' => 'Status updated successfully', 'form' => $form]);
     }
@@ -141,44 +162,31 @@ class AdminController extends Controller
         
         $editedFields = implode(', ', array_map(fn($k) => str_replace('_', ' ', $k), array_keys($data)));
         $note        = $request->input('admin_note', '');
+        $refId       = $formLabel . '-' . str_pad($id, 5, '0', STR_PAD_LEFT);
 
-        // In-app notification to recruiter
-        try {
-            Notification::create([
-                'user_id'   => $form->user_id,
-                'sender_id' => $admin->id,
-                'type'      => 'edit_request',
-                'title'     => "Admin edited your {$formLabel}",
-                'message'   => "CDC Admin ({$admin->name}) made changes to your {$formLabel} for {$company} ({$title}). "
-                             . "Fields updated: {$editedFields}."
-                             . ($note ? " Note: {$note}" : ""),
-                'form_type' => $type,
-                'form_id'   => $id,
-            ]);
-        } catch (\Throwable $e) {
-            \Log::warning('Admin edit notification failed: ' . $e->getMessage());
-        }
-
-        // Email notification to recruiter
-        if ($recruiter) {
-            try {
-                Mail::raw(
-                    "Dear {$recruiter->name},\n\n"
-                    . "CDC Admin has made edits to your {$formLabel} (ID: {$formLabel}-" . str_pad($id, 5, '0', STR_PAD_LEFT) . ") for {$company}.\n\n"
-                    . "Job/Internship Title: {$title}\n"
-                    . "Fields updated: {$editedFields}.\n"
-                    . ($note ? "Admin note: {$note}\n" : "")
-                    . "\nPlease log in to the CDC Portal grid to review the changes.\n\n"
-                    . "Regards,\nCDC Team, IIT (ISM) Dhanbad",
-                    fn($mail) => $mail
-                        ->to($recruiter->email)
-                        ->subject("[{$formLabel}] Admin made edits — IIT (ISM) Dhanbad CDC")
-                        ->from(config('mail.from.address'), 'CDC IIT (ISM) Dhanbad')
-                );
-            } catch (\Throwable $e) {
-                \Log::warning('Admin edit email failed: ' . $e->getMessage());
-            }
-        }
+        // Notify recruiter (in-app + SMTP email)
+        NotificationService::send(
+            userId:    $form->user_id,
+            senderId:  $admin->id,
+            type:      'edit_request',
+            title:     "Admin edited your {$formLabel}",
+            message:   "CDC Admin ({$admin->name}) made changes to your {$formLabel} for {$company} ({$title}). "
+                     . "Fields updated: {$editedFields}."
+                     . ($note ? " Note: {$note}" : ""),
+            formType:  $type,
+            formId:    (int) $id,
+            sendEmail: true,
+            emailType: 'admin_edit',
+            emailMeta: [
+                'Reference ID'    => $refId,
+                'Company'         => $company,
+                'Job/Profile'     => $title,
+                'Fields Updated'  => $editedFields,
+                'Admin Note'      => $note ?: 'None',
+                'cta_url'         => config('app.url') . '/dashboard',
+                'cta_label'       => 'Review Changes',
+            ]
+        );
 
         return response()->json([
             'message' => 'Form updated by admin. Recruiter notified.',
@@ -200,18 +208,26 @@ class AdminController extends Controller
             'form_id'   => 'nullable|integer',
         ]);
 
-        Notification::create([
-            'user_id'   => $request->user_id,
-            'sender_id' => Auth::id(),
-            'type'      => $request->type === 'email' ? 'email' : 'edit_request',
-            'title'     => $request->title,
-            'message'   => $request->message,
-            'form_type' => $request->form_type,
-            'form_id'   => $request->form_id,
-            'is_email'  => $request->type === 'email',
-        ]);
+        $shouldEmail = $request->type === 'email';
 
-        // In a real app, you'd trigger a Mail class here if is_email is true.
+        // Use centralized service (in-app + optional SMTP)
+        NotificationService::send(
+            userId:    $request->user_id,
+            senderId:  Auth::id(),
+            type:      $shouldEmail ? 'email' : 'edit_request',
+            title:     $request->title,
+            message:   $request->message,
+            formType:  $request->form_type,
+            formId:    $request->form_id ? (int) $request->form_id : null,
+            sendEmail: $shouldEmail,
+            emailType: 'communication',
+            emailMeta: [
+                'From'      => 'CDC Admin',
+                'Form'      => $request->form_type ? strtoupper($request->form_type) . ' #' . $request->form_id : 'N/A',
+                'cta_url'   => config('app.url') . '/dashboard',
+                'cta_label' => 'Open Portal',
+            ]
+        );
 
         return response()->json(['message' => 'Communication sent successfully']);
     }

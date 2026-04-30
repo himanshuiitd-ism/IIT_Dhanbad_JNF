@@ -67,6 +67,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/forms/{type}/{id}/edit',    [\App\Http\Controllers\Api\AdminController::class, 'adminEditForm']);
         Route::post('/communicate',              [\App\Http\Controllers\Api\AdminController::class, 'sendCommunication']);
         Route::get('/forms/{type}/{id}/comms',   [\App\Http\Controllers\Api\AdminController::class, 'getFormCommunications']);
+
+        // ── SMTP ────────────────────────────────────────────────────
+        Route::post('/smtp/test',                [\App\Http\Controllers\Api\SmtpController::class, 'testSmtp']);
+        Route::get('/smtp/config',               [\App\Http\Controllers\Api\SmtpController::class, 'getSmtpConfig']);
     });
 
     // ── Alumni Mentorship (admin management) ───────────────────────────

@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\EditRequest;
 use App\Models\Jnf;
 use App\Models\Inf;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Mail;
 
 class EditRequestController extends Controller
 {
@@ -50,6 +50,28 @@ class EditRequestController extends Controller
             'reason'    => $request->reason,
             'status'    => 'pending',
         ]);
+
+        $formLabel = strtoupper($request->form_type);
+        $company   = $form->company_name ?? 'Unknown';
+
+        // Notify admins about new edit request (in-app + SMTP)
+        NotificationService::notifyAdmins(
+            type:      'edit_request',
+            title:     "Edit Request — {$formLabel}",
+            message:   "{$user->name} ({$user->organisation}) is requesting edit access for {$formLabel} #{$request->form_id} ({$company}). Reason: {$request->reason}",
+            formType:  $request->form_type,
+            formId:    (int) $request->form_id,
+            sendEmail: true,
+            emailType: 'edit_request',
+            emailMeta: [
+                'Recruiter'  => $user->name . ' (' . $user->email . ')',
+                'Form'       => "{$formLabel} #{$request->form_id}",
+                'Company'    => $company,
+                'Reason'     => $request->reason,
+                'cta_url'    => config('app.url') . '/admin',
+                'cta_label'  => 'Review Request',
+            ]
+        );
 
         return response()->json([
             'message' => 'Edit request submitted. You will be notified once the admin reviews it.',
@@ -120,27 +142,28 @@ class EditRequestController extends Controller
             'admin_note' => $request->admin_note,
         ]);
 
-        // Send email notification to the recruiter
-        $recruiter = $editRequest->user;
         $formType  = strtoupper($editRequest->form_type);
         $adminNote = $request->admin_note ?: 'No additional comments.';
 
-        try {
-            Mail::raw(
-                "Dear {$recruiter->name},\n\n" .
-                "Your edit request for {$formType} (ID: {$editRequest->form_id}) has been APPROVED by the CDC Placement Office.\n\n" .
-                "Admin Note: {$adminNote}\n\n" .
-                "You may now log in to your dashboard and edit the form once.\n\n" .
-                "Regards,\nCDC Placement Cell\nIIT (ISM) Dhanbad",
-                function ($mail) use ($recruiter, $formType) {
-                    $mail->to($recruiter->email)
-                         ->subject("[IIT Dhanbad CDC] Edit Request Approved - {$formType}");
-                }
-            );
-        } catch (\Exception $e) {
-            // Email failure is non-fatal; log it
-            \Log::warning('Edit request approval email failed: ' . $e->getMessage());
-        }
+        // Notify recruiter (in-app + SMTP)
+        NotificationService::send(
+            userId:    $editRequest->user_id,
+            senderId:  Auth::id(),
+            type:      'edit_request',
+            title:     "Edit Request Approved — {$formType}",
+            message:   "Your edit request for {$formType} (ID: {$editRequest->form_id}) has been APPROVED. You may now edit the form once. Admin note: {$adminNote}",
+            formType:  $editRequest->form_type,
+            formId:    (int) $editRequest->form_id,
+            sendEmail: true,
+            emailType: 'edit_request_approved',
+            emailMeta: [
+                'Form'        => "{$formType} #{$editRequest->form_id}",
+                'Status'      => 'APPROVED',
+                'Admin Note'  => $adminNote,
+                'cta_url'     => config('app.url') . '/dashboard',
+                'cta_label'   => 'Edit Your Form',
+            ]
+        );
 
         return response()->json(['message' => 'Request approved and recruiter notified.']);
     }
@@ -163,25 +186,28 @@ class EditRequestController extends Controller
             'admin_note' => $request->admin_note,
         ]);
 
-        // Notify recruiter of rejection
-        $recruiter = $editRequest->user;
         $formType  = strtoupper($editRequest->form_type);
+        $adminNote = $request->admin_note ?: 'Not specified.';
 
-        try {
-            Mail::raw(
-                "Dear {$recruiter->name},\n\n" .
-                "Your edit request for {$formType} (ID: {$editRequest->form_id}) has been DECLINED by the CDC Placement Office.\n\n" .
-                "Reason: " . ($request->admin_note ?: 'Not specified.') . "\n\n" .
-                "For clarification, please contact placement@iitism.ac.in.\n\n" .
-                "Regards,\nCDC Placement Cell\nIIT (ISM) Dhanbad",
-                function ($mail) use ($recruiter, $formType) {
-                    $mail->to($recruiter->email)
-                         ->subject("[IIT Dhanbad CDC] Edit Request Declined - {$formType}");
-                }
-            );
-        } catch (\Exception $e) {
-            \Log::warning('Edit request rejection email failed: ' . $e->getMessage());
-        }
+        // Notify recruiter (in-app + SMTP)
+        NotificationService::send(
+            userId:    $editRequest->user_id,
+            senderId:  Auth::id(),
+            type:      'edit_request',
+            title:     "Edit Request Declined — {$formType}",
+            message:   "Your edit request for {$formType} (ID: {$editRequest->form_id}) has been DECLINED. Reason: {$adminNote}. For clarification, contact placement@iitism.ac.in.",
+            formType:  $editRequest->form_type,
+            formId:    (int) $editRequest->form_id,
+            sendEmail: true,
+            emailType: 'edit_request_rejected',
+            emailMeta: [
+                'Form'        => "{$formType} #{$editRequest->form_id}",
+                'Status'      => 'REJECTED',
+                'Reason'      => $adminNote,
+                'cta_url'     => config('app.url') . '/dashboard',
+                'cta_label'   => 'View Dashboard',
+            ]
+        );
 
         return response()->json(['message' => 'Request rejected and recruiter notified.']);
     }

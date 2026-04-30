@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Notification;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -46,14 +47,15 @@ class AuthController extends Controller
             'updated_at' => now(),
         ]);
 
-        // Send the OTP via email
+        // Send the OTP via branded email template
         try {
-            Mail::raw(
-                "Your IIT (ISM) Dhanbad CDC registration OTP is: {$otp}\n\nThis code expires in 5 minutes.\n\nDo not share this OTP with anyone.",
-                function ($mail) use ($email, $otp) {
-                    $mail->to($email)
-                         ->subject('[IIT Dhanbad CDC] Email Verification OTP');
-                }
+            NotificationService::sendEmailToAddress(
+                email: $email,
+                name:  'Recruiter',
+                type:  'otp',
+                title: '[IIT Dhanbad CDC] Email Verification OTP',
+                body:  "Your IIT (ISM) Dhanbad CDC registration OTP is:\n\n{$otp}\n\nThis code expires in 5 minutes.\n\nDo not share this OTP with anyone.",
+                meta:  ['OTP Code' => $otp, 'Expires In' => '5 minutes']
             );
         } catch (\Exception $e) {
             \Log::warning('OTP email failed: ' . $e->getMessage());

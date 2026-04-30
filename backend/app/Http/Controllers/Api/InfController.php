@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Inf;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -80,20 +81,50 @@ class InfController extends Controller
             'edit_count' => $editCount
         ]));
 
-        // --- Notify Admins ---
-        try {
-            $admins = \App\Models\User::where('role', 'admin')->get();
-            foreach ($admins as $admin) {
-                \App\Models\Notification::create([
-                    'user_id'   => $admin->id,
-                    'type'      => 'system',
-                    'title'     => 'New INF Submitted',
-                    'message'   => "{$user->organisation} has submitted a new INF: {$inf->profile_name}",
-                    'form_type' => 'inf',
-                    'form_id'   => $inf->id,
-                ]);
-            }
-        } catch (\Throwable $e) {}
+        $company = $inf->company_name ?? 'Your Company';
+        $profile = $inf->profile_name ?? 'Internship Profile';
+        $refId   = 'INF-' . str_pad($inf->id, 5, '0', STR_PAD_LEFT);
+
+        // Confirm to recruiter (in-app + SMTP)
+        NotificationService::send(
+            userId:    $user->id,
+            senderId:  null,
+            type:      'system',
+            title:     'INF Submitted Successfully',
+            message:   "Your Internship Notification Form ({$refId}) for {$company} has been submitted to IIT (ISM) Dhanbad CDC. The CDC team will review your form within 2-3 working days.",
+            formType:  'inf',
+            formId:    $inf->id,
+            sendEmail: true,
+            emailType: 'form_submitted',
+            emailMeta: [
+                'Reference ID'  => $refId,
+                'Company'       => $company,
+                'Profile'       => $profile,
+                'Submitted On'  => now()->format('d M Y, h:i A'),
+                'cta_url'       => config('app.url') . '/dashboard',
+                'cta_label'     => 'View in Dashboard',
+            ]
+        );
+
+        // Notify all Admins (in-app + SMTP)
+        NotificationService::notifyAdmins(
+            type:      'system',
+            title:     'New INF Submitted',
+            message:   "{$user->organisation} has submitted a new INF: {$profile}",
+            formType:  'inf',
+            formId:    $inf->id,
+            sendEmail: true,
+            emailType: 'form_submitted',
+            emailMeta: [
+                'Reference ID'  => $refId,
+                'Company'       => $company,
+                'Profile'       => $profile,
+                'Recruiter'     => $user->name . ' (' . $user->email . ')',
+                'Submitted On'  => now()->format('d M Y, h:i A'),
+                'cta_url'       => config('app.url') . '/admin',
+                'cta_label'     => 'Review in Admin Panel',
+            ]
+        );
 
         return response()->json(['message' => 'INF submitted successfully.', 'data' => $inf->load('user')]);
     }
