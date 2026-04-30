@@ -33,7 +33,7 @@ import FormTracker from "@/components/FormTracker";
 const MAROON = "#850000ff";
 const RED = "#b90000ff";
 const SURFACE = "#FBF8F8";
-const WHITE  = "#FFFFFF";
+const WHITE = "#FFFFFF";
 const BORDER = "rgba(0,0,0,0.09)";
 
 // ─── Re-usable styled input ──────────────────────────────────────────
@@ -93,48 +93,48 @@ const ReviewRow = ({ label, value }: { label: string; value?: string | number | 
 // ── Programmes & branches ────────────────────────────────────────────
 const PROGRAMMES: Record<string, string[]> = {
   "B.Tech / Dual Degree (JEE Advanced)": [
-    "Chemical Engineering","Civil Engineering","Computer Science and Engineering",
-    "CS & Engineering (AI & Data Science)","Electronics and Communication Engineering",
-    "Electrical Engineering","Environmental Engineering","Engineering Physics",
-    "Fuel & Energy Engineering","Mechanical Engineering","Mining Engineering",
-    "Mining Machinery Engineering","Minerals and Metallurgical Engineering",
-    "Petroleum Engineering","Mathematics and Computing",
+    "Chemical Engineering", "Civil Engineering", "Computer Science and Engineering",
+    "CS & Engineering (AI & Data Science)", "Electronics and Communication Engineering",
+    "Electrical Engineering", "Environmental Engineering", "Engineering Physics",
+    "Fuel & Energy Engineering", "Mechanical Engineering", "Mining Engineering",
+    "Mining Machinery Engineering", "Minerals and Metallurgical Engineering",
+    "Petroleum Engineering", "Mathematics and Computing",
   ],
   "Integrated M.Tech (JEE Advanced)": [
-    "Applied Geology","Applied Geophysics","Mathematics and Computing",
+    "Applied Geology", "Applied Geophysics", "Mathematics and Computing",
   ],
   "M.Tech GATE (2-Year)": [
-    "Chemical Engineering","Civil Engg (Geotechnical)","Civil Engg (Structural)",
-    "Civil Engg (Water Resources)","Communication & Signal Processing",
-    "Computer Science and Engineering","Data Analytics","Earthquake Science & Engineering",
-    "Electronics & Instrumentation","Environmental Science and Engineering","Fuel Engineering",
-    "Industrial Engineering and Management","Machine Design","Mechanical Engg (Manufacturing)",
-    "Mechanical Engg (Thermal)","Mineral Engineering","Mining Engineering",
-    "Mining Engg (Geomatics & Tunnelling)","Mineral Exploration","Opencast Mining",
-    "Petroleum Engineering","Petroleum Exploration","Power Electronics & Electrical Drives",
-    "Power System Engineering","Pharmaceutical Science & Engineering",
-    "RF & Microwave Engineering","VLSI Design",
+    "Chemical Engineering", "Civil Engg (Geotechnical)", "Civil Engg (Structural)",
+    "Civil Engg (Water Resources)", "Communication & Signal Processing",
+    "Computer Science and Engineering", "Data Analytics", "Earthquake Science & Engineering",
+    "Electronics & Instrumentation", "Environmental Science and Engineering", "Fuel Engineering",
+    "Industrial Engineering and Management", "Machine Design", "Mechanical Engg (Manufacturing)",
+    "Mechanical Engg (Thermal)", "Mineral Engineering", "Mining Engineering",
+    "Mining Engg (Geomatics & Tunnelling)", "Mineral Exploration", "Opencast Mining",
+    "Petroleum Engineering", "Petroleum Exploration", "Power Electronics & Electrical Drives",
+    "Power System Engineering", "Pharmaceutical Science & Engineering",
+    "RF & Microwave Engineering", "VLSI Design",
   ],
-  "M.Sc JAM (2-Year)": ["Chemistry","Mathematics","Physics","Statistics"],
-  "M.Sc.Tech JAM (3-Year)": ["Applied Geology","Applied Geophysics","Geo-Exploration"],
-  "MBA (CAT)": ["MBA (General)","MBA (Business Analytics)","Operation Management","Financial Management"],
+  "M.Sc JAM (2-Year)": ["Chemistry", "Mathematics", "Physics", "Statistics"],
+  "M.Sc.Tech JAM (3-Year)": ["Applied Geology", "Applied Geophysics", "Geo-Exploration"],
+  "MBA (CAT)": ["MBA (General)", "MBA (Business Analytics)", "Operation Management", "Financial Management"],
   "Ph.D (GATE/NET)": [
-    "Chemical Engineering","Chemistry","Civil Engineering",
-    "Computer Science and Engineering","Earthquake Science & Engineering",
-    "Electrical Engineering","Environmental Science","Fuel Engineering",
-    "Humanities & Social Sciences","Management","Mathematics",
-    "Mechanical Engineering","Mineral Engineering","Mining Engineering",
-    "Petroleum Engineering","Physics","Pharmaceutical Science & Engineering",
+    "Chemical Engineering", "Chemistry", "Civil Engineering",
+    "Computer Science and Engineering", "Earthquake Science & Engineering",
+    "Electrical Engineering", "Environmental Science", "Fuel Engineering",
+    "Humanities & Social Sciences", "Management", "Mathematics",
+    "Mechanical Engineering", "Mineral Engineering", "Mining Engineering",
+    "Petroleum Engineering", "Physics", "Pharmaceutical Science & Engineering",
   ],
 };
 
-const SALARY_PROGS = ["B.Tech / Dual / Int. M.Tech","M.Tech","MBA","M.Sc / M.Sc.Tech","Ph.D"];
+const SALARY_PROGS = ["B.Tech / Dual / Int. M.Tech", "M.Tech", "MBA", "M.Sc / M.Sc.Tech", "Ph.D"];
 
 const SELECTION_STAGES_LIST = [
-  { key: "pre_placement_talk",      label: "Pre-Placement\nTalk" },
-  { key: "resume_shortlisting",     label: "Resume\nShortlisting" },
-  { key: "online_written_test",     label: "Online /\nWritten Test" },
-  { key: "group_discussion",        label: "Group\nDiscussion" },
+  { key: "pre_placement_talk", label: "Pre-Placement\nTalk" },
+  { key: "resume_shortlisting", label: "Resume\nShortlisting" },
+  { key: "online_written_test", label: "Online /\nWritten Test" },
+  { key: "group_discussion", label: "Group\nDiscussion" },
   { key: "personal_tech_interview", label: "Personal /\nTechnical Interview" },
 ];
 
@@ -148,22 +148,22 @@ const DECLARATION_ITEMS = [
 ];
 
 // ── Helpers ──────────────────────────────────────────────────────────
-const initContact = () => ({ name:"", designation:"", email:"", phone:"", landline:"" });
+const initContact = () => ({ name: "", designation: "", email: "", phone: "", landline: "" });
 const initElig = () => {
-  const out: Record<string, Record<string, { checked:boolean; cgpa:string; backlogs:boolean }>> = {};
-  Object.entries(PROGRAMMES).forEach(([p,bs]) => {
+  const out: Record<string, Record<string, { checked: boolean; cgpa: string; backlogs: boolean }>> = {};
+  Object.entries(PROGRAMMES).forEach(([p, bs]) => {
     out[p] = {};
-    bs.forEach(b => { out[p][b] = { checked:false, cgpa:"", backlogs:true }; });
+    bs.forEach(b => { out[p][b] = { checked: false, cgpa: "", backlogs: true }; });
   });
   return out;
 };
 const initSalary = () => {
-  const out: Record<string, {ctc:string;base:string;inhand:string}> = {};
-  SALARY_PROGS.forEach(p => { out[p] = {ctc:"",base:"",inhand:""}; });
+  const out: Record<string, { ctc: string; base: string; inhand: string }> = {};
+  SALARY_PROGS.forEach(p => { out[p] = { ctc: "", base: "", inhand: "" }; });
   return out;
 };
 const initAdditional = () => ({
-  joining_bonus:"", retention_bonus:"", bond_deductions:"", esops:"", relocation:"",
+  joining_bonus: "", retention_bonus: "", bond_deductions: "", esops: "", relocation: "",
 });
 
 const TOKEN = () => typeof window !== "undefined"
@@ -178,26 +178,26 @@ export default function JnfNewPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState(0);
-  const [jnfId, setJnfId] = useState<number|null>(null);
+  const [jnfId, setJnfId] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [toast, setToast] = useState<{open:boolean;msg:string;type:"success"|"error"}>({ open:false, msg:"", type:"success" });
+  const [toast, setToast] = useState<{ open: boolean; msg: string; type: "success" | "error" }>({ open: false, msg: "", type: "success" });
   const [backDialog, setBackDialog] = useState(false);
   const [draftLoaded, setDraftLoaded] = useState(false);
 
-  const showToast = (msg: string, type: "success"|"error" = "success") =>
-    setToast({ open:true, msg, type });
+  const showToast = (msg: string, type: "success" | "error" = "success") =>
+    setToast({ open: true, msg, type });
 
   // ── STEP 1: Company ──────────────────────────────────────────────
   const [company, setCompany] = useState({
-    company_name:"", website:"", postal_address:"", employees:"", sector:"",
-    category:"", date_of_establishment:"", annual_turnover:"", linkedin:"",
-    hq_country:"", nature_of_business:"", description:"",
+    company_name: "", website: "", postal_address: "", employees: "", sector: "",
+    category: "", date_of_establishment: "", annual_turnover: "", linkedin: "",
+    hq_country: "", nature_of_business: "", description: "",
   });
   const [industrySectors, setIndustrySectors] = useState<string[]>([]);
   const [sectorInput, setSectorInput] = useState("");
-  const [logoFile, setLogoFile] = useState<File|null>(null);
-  const [pdfFile, setPdfFile] = useState<File|null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
 
   // ── STEP 2: Contacts ─────────────────────────────────────────────
   const [headTA, setHeadTA] = useState(initContact());
@@ -206,25 +206,25 @@ export default function JnfNewPage() {
 
   // ── STEP 3: Job ──────────────────────────────────────────────────
   const [job, setJob] = useState({
-    job_title:"", job_formal_designation:"", place_of_posting:"", work_mode:"",
-    expected_hires:"", min_hires:"", joining_month:"",
-    job_description:"", additional_info:"",
-    bond_details:"", registration_link:"", onboarding:"",
+    job_title: "", job_formal_designation: "", place_of_posting: "", work_mode: "",
+    expected_hires: "", min_hires: "", joining_month: "",
+    job_description: "", additional_info: "",
+    bond_details: "", registration_link: "", onboarding: "",
   });
   const [skills, setSkills] = useState<string[]>([]);
   const [skillInput, setSkillInput] = useState("");
-  const [jdPdf, setJdPdf] = useState<File|null>(null);
+  const [jdPdf, setJdPdf] = useState<File | null>(null);
 
   // ── STEP 4: Eligibility ──────────────────────────────────────────
   const [eligibility, setEligibility] = useState(initElig());
   const [globalCgpa, setGlobalCgpa] = useState("");
   const [globalBacklogs, setGlobalBacklogs] = useState(false);
 
-  const toggleBranch = (prog:string, b:string) =>
+  const toggleBranch = (prog: string, b: string) =>
     setEligibility(p => ({ ...p, [prog]: { ...p[prog], [b]: { ...p[prog][b], checked: !p[prog][b].checked } } }));
-  const setBranchCgpa = (prog:string, b:string, v:string) =>
+  const setBranchCgpa = (prog: string, b: string, v: string) =>
     setEligibility(p => ({ ...p, [prog]: { ...p[prog], [b]: { ...p[prog][b], cgpa: v } } }));
-  const setBranchBacklogs = (prog:string, b:string, v:boolean) =>
+  const setBranchBacklogs = (prog: string, b: string, v: boolean) =>
     setEligibility(p => ({ ...p, [prog]: { ...p[prog], [b]: { ...p[prog][b], backlogs: v } } }));
 
   // ── STEP 5: Salary ───────────────────────────────────────────────
@@ -235,7 +235,7 @@ export default function JnfNewPage() {
   );
 
   // ── STEP 6: Selection ────────────────────────────────────────────
-  const [stages, setStages] = useState<Record<string,boolean>>(
+  const [stages, setStages] = useState<Record<string, boolean>>(
     () => { const o: any = {}; SELECTION_STAGES_LIST.forEach(s => { o[s.key] = false; }); return o; }
   );
   const [selectionMode, setSelectionMode] = useState("");
@@ -245,11 +245,11 @@ export default function JnfNewPage() {
   const [medicalTest, setMedicalTest] = useState(false);
   const [otherScreening, setOtherScreening] = useState("");
   const [infrastructure, setInfrastructure] = useState("");
-  const [testRounds, setTestRounds] = useState([{ name:"", duration:"", type:"" }]);
-  const [interviewRounds, setInterviewRounds] = useState([{ name:"", duration:"", mode:"" }]);
+  const [testRounds, setTestRounds] = useState([{ name: "", duration: "", type: "" }]);
+  const [interviewRounds, setInterviewRounds] = useState([{ name: "", duration: "", mode: "" }]);
 
-  const addTestRound = () => setTestRounds(p => [...p, { name:"", duration:"", type:"" }]);
-  const addInterviewRound = () => setInterviewRounds(p => [...p, { name:"", duration:"", mode:"" }]);
+  const addTestRound = () => setTestRounds(p => [...p, { name: "", duration: "", type: "" }]);
+  const addInterviewRound = () => setInterviewRounds(p => [...p, { name: "", duration: "", mode: "" }]);
 
   // ── STEP 7: Declaration ──────────────────────────────────────────
   const [declarations, setDeclarations] = useState<boolean[]>(DECLARATION_ITEMS.map(() => false));
@@ -272,41 +272,41 @@ export default function JnfNewPage() {
       const saved = loadDraft("jnf");
       if (saved) {
         const d = saved.data;
-        if (d.company)           setCompany(d.company);
-        if (d.industrySectors)   setIndustrySectors(d.industrySectors);
-        if (d.headTA)            setHeadTA(d.headTA);
-        if (d.poc1)              setPoc1(d.poc1);
-        if (d.poc2)              setPoc2(d.poc2);
-        if (d.job)               setJob(d.job);
-        if (d.skills)            setSkills(d.skills);
-        if (d.globalCgpa)        setGlobalCgpa(d.globalCgpa);
+        if (d.company) setCompany(d.company);
+        if (d.industrySectors) setIndustrySectors(d.industrySectors);
+        if (d.headTA) setHeadTA(d.headTA);
+        if (d.poc1) setPoc1(d.poc1);
+        if (d.poc2) setPoc2(d.poc2);
+        if (d.job) setJob(d.job);
+        if (d.skills) setSkills(d.skills);
+        if (d.globalCgpa) setGlobalCgpa(d.globalCgpa);
         if (d.globalBacklogs !== undefined) setGlobalBacklogs(d.globalBacklogs);
-        if (d.currency)          setCurrency(d.currency);
-        if (d.salary)            setSalary(d.salary);
-        if (d.additionalSalary)  setAdditionalSalary(d.additionalSalary);
-        if (d.stages)            setStages(d.stages);
-        if (d.selectionMode)     setSelectionMode(d.selectionMode);
-        if (d.testType)          setTestType(d.testType);
-        if (d.interviewModes)    setInterviewModes(d.interviewModes);
+        if (d.currency) setCurrency(d.currency);
+        if (d.salary) setSalary(d.salary);
+        if (d.additionalSalary) setAdditionalSalary(d.additionalSalary);
+        if (d.stages) setStages(d.stages);
+        if (d.selectionMode) setSelectionMode(d.selectionMode);
+        if (d.testType) setTestType(d.testType);
+        if (d.interviewModes) setInterviewModes(d.interviewModes);
         if (d.psychometricTest !== undefined) setPsychometricTest(d.psychometricTest);
-        if (d.medicalTest !== undefined)      setMedicalTest(d.medicalTest);
-        if (d.otherScreening)    setOtherScreening(d.otherScreening);
-        if (d.infrastructure)    setInfrastructure(d.infrastructure);
-        if (d.testRounds)        setTestRounds(d.testRounds);
-        if (d.interviewRounds)   setInterviewRounds(d.interviewRounds);
-        if (d.declarations)      setDeclarations(d.declarations);
-        if (d.signatoryName)     setSignatoryName(d.signatoryName);
+        if (d.medicalTest !== undefined) setMedicalTest(d.medicalTest);
+        if (d.otherScreening) setOtherScreening(d.otherScreening);
+        if (d.infrastructure) setInfrastructure(d.infrastructure);
+        if (d.testRounds) setTestRounds(d.testRounds);
+        if (d.interviewRounds) setInterviewRounds(d.interviewRounds);
+        if (d.declarations) setDeclarations(d.declarations);
+        if (d.signatoryName) setSignatoryName(d.signatoryName);
         if (d.signatoryDesignation) setSignatoryDesignation(d.signatoryDesignation);
-        if (d.signatoryDate)     setSignatoryDate(d.signatoryDate);
-        if (d.typedSignature)    setTypedSignature(d.typedSignature);
+        if (d.signatoryDate) setSignatoryDate(d.signatoryDate);
+        if (d.typedSignature) setTypedSignature(d.typedSignature);
         if (d.rtiNirf !== undefined) setRtiNirf(d.rtiNirf);
-        if (d.jnfId)             setJnfId(d.jnfId);
+        if (d.jnfId) setJnfId(d.jnfId);
         setStep(saved.meta.step || 0);
         showToast("Draft restored — continue from where you left off ✓");
       }
       setDraftLoaded(true);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   // ── Load company profile from localStorage ───────────────────────
@@ -331,7 +331,7 @@ export default function JnfNewPage() {
       }));
       if (parsed.industry_sectors?.length) setIndustrySectors(parsed.industry_sectors);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ── Count filled fields for completion % (synced with tracker) ──────────
@@ -370,12 +370,14 @@ export default function JnfNewPage() {
   // ── Auto-save to localStorage ────────────────────────────────────
   useDraft(
     "jnf",
-    { company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa,
+    {
+      company, industrySectors, headTA, poc1, poc2, job, skills, globalCgpa,
       globalBacklogs, currency, salary, additionalSalary, stages, selectionMode,
       testType, interviewModes, psychometricTest, medicalTest, otherScreening,
       infrastructure, testRounds, interviewRounds, declarations,
       signatoryName, signatoryDesignation, signatoryDate, typedSignature,
-      rtiNirf, jnfId },
+      rtiNirf, jnfId
+    },
     { formType: "jnf", title: company.company_name || "Untitled JNF", step, completion: completionPct, id: jnfId },
   );
 
@@ -519,13 +521,13 @@ export default function JnfNewPage() {
     Object.entries(company).forEach(([k, v]) => fd.append(k, v));
     fd.append("industry_sectors", JSON.stringify(industrySectors));
     if (logoFile) fd.append("logo", logoFile);
-    if (pdfFile)  fd.append("brochure_pdf", pdfFile);
+    if (pdfFile) fd.append("brochure_pdf", pdfFile);
     // Step 2
     fd.append("head_ta", JSON.stringify(headTA));
     fd.append("poc1", JSON.stringify(poc1));
     fd.append("poc2", JSON.stringify(poc2));
     // Step 3
-    Object.entries(job).forEach(([k,v]) => fd.append(k, v));
+    Object.entries(job).forEach(([k, v]) => fd.append(k, v));
     fd.append("required_skills", JSON.stringify(skills));
     if (jdPdf) fd.append("jd_pdf", jdPdf);
     // Step 4
@@ -607,27 +609,27 @@ export default function JnfNewPage() {
 
   // ─────────────────────────────────────────────────────────────────
   const STEPS = [
-    "Contact & HR","Job Profile",
-    "Eligibility","Salary Details","Selection Process",
-    "Declaration","Review & Submit",
+    "Contact & HR", "Job Profile",
+    "Eligibility", "Salary Details", "Selection Process",
+    "Declaration", "Review & Submit",
   ];
 
   return (
-    <Box sx={{ minHeight:"100vh", bgcolor:SURFACE }}>
+    <Box sx={{ minHeight: "100vh", bgcolor: SURFACE }}>
       {/* Top bar */}
-      <Box sx={{ bgcolor:MAROON, px:{xs:2,md:4}, py:1.5, display:"flex", justifyContent:"space-between", alignItems:"center" }}>
-        <Box sx={{ display:"flex", alignItems:"center", gap:2 }}>
-          <IconButton size="small" onClick={() => router.push("/dashboard")} sx={{ color:"rgba(255,255,255,0.7)", "&:hover":{color:WHITE} }}>
-            <ArrowBackIcon sx={{ fontSize:18 }} />
+      <Box sx={{ bgcolor: MAROON, px: { xs: 2, md: 4 }, py: 1.5, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <IconButton size="small" onClick={() => router.push("/dashboard")} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}>
+            <ArrowBackIcon sx={{ fontSize: 18 }} />
           </IconButton>
           <Box>
-            <Typography sx={{ color:WHITE, fontWeight:900, fontSize:"0.95rem", lineHeight:1 }}>Job Notification Form</Typography>
-            <Typography sx={{ color:"rgba(255,255,255,0.45)", fontSize:"0.6rem", textTransform:"uppercase", letterSpacing:0.8 }}>
-              IIT (ISM) Dhanbad · CDC Portal {jnfId ? `· Ref: JNF-${String(jnfId).padStart(5,"0")}` : "· New Draft"}
+            <Typography sx={{ color: WHITE, fontWeight: 900, fontSize: "0.95rem", lineHeight: 1 }}>Job Notification Form</Typography>
+            <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.6rem", textTransform: "uppercase", letterSpacing: 0.8 }}>
+              IIT (ISM) Dhanbad · CDC Portal {jnfId ? `· Ref: JNF-${String(jnfId).padStart(5, "0")}` : "· New Draft"}
             </Typography>
           </Box>
         </Box>
-        <Box sx={{ display:"flex", alignItems:"center", gap:1.5 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
           {/* AI Auto-Fill Button */}
           <Tooltip title="Upload a recruiter PDF to auto-fill form fields with AI">
             <Button
@@ -661,15 +663,15 @@ export default function JnfNewPage() {
               <Typography sx={{ fontSize: "0.7rem", fontWeight: 800 }}>📋</Typography>
             </IconButton>
           </Tooltip>
-          {saving && <Box sx={{ display:"flex", alignItems:"center", gap:0.8, bgcolor:"rgba(255,255,255,0.1)", borderRadius:10, px:1.5, py:0.4 }}>
-            <CircularProgress size={10} sx={{ color:WHITE }} />
-            <Typography sx={{ color:WHITE, fontSize:"0.7rem" }}>Saving…</Typography>
+          {saving && <Box sx={{ display: "flex", alignItems: "center", gap: 0.8, bgcolor: "rgba(255,255,255,0.1)", borderRadius: 10, px: 1.5, py: 0.4 }}>
+            <CircularProgress size={10} sx={{ color: WHITE }} />
+            <Typography sx={{ color: WHITE, fontSize: "0.7rem" }}>Saving…</Typography>
           </Box>}
         </Box>
       </Box>
 
       {/* Stepper */}
-      <Box sx={{ bgcolor:WHITE, borderBottom:`1px solid ${BORDER}`, px:{xs:1,md:4}, py:1.5, overflowX:"auto" }}>
+      <Box sx={{ bgcolor: WHITE, borderBottom: `1px solid ${BORDER}`, px: { xs: 1, md: 4 }, py: 1.5, overflowX: "auto" }}>
         <Stepper activeStep={step} alternativeLabel>
           {STEPS.map((label, i) => (
             <Step key={label} completed={i < step}>
@@ -677,11 +679,11 @@ export default function JnfNewPage() {
                 onClick={() => i < step && setStep(i)}
                 sx={{
                   cursor: i < step ? "pointer" : "default",
-                  "& .MuiStepIcon-root.Mui-active":    { color:MAROON },
-                  "& .MuiStepIcon-root.Mui-completed": { color:MAROON },
-                  "& .MuiStepLabel-label":             { fontSize:"0.65rem", fontWeight:600 },
-                  "& .MuiStepLabel-label.Mui-active":  { color:MAROON },
-                  "& .MuiStepLabel-label.Mui-completed":{ color:MAROON },
+                  "& .MuiStepIcon-root.Mui-active": { color: MAROON },
+                  "& .MuiStepIcon-root.Mui-completed": { color: MAROON },
+                  "& .MuiStepLabel-label": { fontSize: "0.65rem", fontWeight: 600 },
+                  "& .MuiStepLabel-label.Mui-active": { color: MAROON },
+                  "& .MuiStepLabel-label.Mui-completed": { color: MAROON },
                 }}
               >{label}</StepLabel>
             </Step>
@@ -689,7 +691,7 @@ export default function JnfNewPage() {
         </Stepper>
       </Box>
 
-      <Box sx={{ maxWidth:1100, mx:"auto", px:{xs:2,md:4}, py:3 }}>
+      <Box sx={{ maxWidth: 1100, mx: "auto", px: { xs: 2, md: 4 }, py: 3 }}>
         <InstitutionalHeader type="JNF" />
 
         {/* ══ COMPANY PROFILE BANNER (auto-filled, read-only) ══════════ */}
@@ -731,24 +733,24 @@ export default function JnfNewPage() {
 
         {/* ══════════════════ STEP 1: CONTACT & HR ═════════════════════ */}
         {step === 0 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-            <Box sx={{ p:3 }}>
-              <Alert severity="info" sx={{ mb:2, fontSize:"0.75rem" }}>★ Landline per contact · All Primary Contact fields are mandatory.</Alert>
-              <Box sx={{ display:"flex", gap:2, flexWrap:"wrap" }}>
+          <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
+            <Box sx={{ p: 3 }}>
+              <Alert severity="info" sx={{ mb: 2, fontSize: "0.75rem" }}>★ Landline per contact · All Primary Contact fields are mandatory.</Alert>
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
                 {[
-                  { title:"Head Talent Acquisition *", req:true, val:headTA, set:setHeadTA },
-                  { title:"Primary Contact (PoC 1) *",   req:true, val:poc1,   set:setPoc1   },
-                  { title:"Secondary Contact (PoC 2) — Optional", req:false, val:poc2, set:setPoc2 },
+                  { title: "Head Talent Acquisition *", req: true, val: headTA, set: setHeadTA },
+                  { title: "Primary Contact (PoC 1) *", req: true, val: poc1, set: setPoc1 },
+                  { title: "Secondary Contact (PoC 2) — Optional", req: false, val: poc2, set: setPoc2 },
                 ].map(({ title, req, val, set }) => (
-                  <Paper key={title} elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", flex:1, minWidth:240 }}>
-                    <Box sx={{ bgcolor:req?MAROON:"#374151", px:2, py:1 }}>
-                      <Typography sx={{ color:WHITE, fontWeight:800, fontSize:"0.78rem" }}>{title}</Typography>
+                  <Paper key={title} elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", flex: 1, minWidth: 240 }}>
+                    <Box sx={{ bgcolor: req ? MAROON : "#374151", px: 2, py: 1 }}>
+                      <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.78rem" }}>{title}</Typography>
                     </Box>
-                    <Box sx={{ p:1.5, display:"flex", flexDirection:"column", gap:1.2 }}>
-                      {[["name","Full Name",req],["designation","Designation",req],["email","Email Address",req],["phone","Mobile (+91)",req],["landline","Landline (Optional)",false]].map(([k,l,r]) => (
+                    <Box sx={{ p: 1.5, display: "flex", flexDirection: "column", gap: 1.2 }}>
+                      {[["name", "Full Name", req], ["designation", "Designation", req], ["email", "Email Address", req], ["phone", "Mobile (+91)", req], ["landline", "Landline (Optional)", false]].map(([k, l, r]) => (
                         <Box key={k as string}>
                           <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                          <TextField fullWidth size="small" placeholder="Click to enter…" value={(val as any)[k as string]} onChange={e=>set((p:any)=>({...p,[k as string]:e.target.value}))} sx={inputSx} />
+                          <TextField fullWidth size="small" placeholder="Click to enter…" value={(val as any)[k as string]} onChange={e => set((p: any) => ({ ...p, [k as string]: e.target.value }))} sx={inputSx} />
                         </Box>
                       ))}
                     </Box>
@@ -761,59 +763,59 @@ export default function JnfNewPage() {
 
         {/* ══════════════════ STEP 3: JOB PROFILE ═══════════════════════ */}
         {step === 1 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
+          <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
             {/* <SectionHeader title="JOB PROFILE" /> */}
-            <Box sx={{ p:3, display:"flex", flexDirection:"column", gap:2.5 }}>
-              <Box sx={{ display:"grid", gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr"}, gap:2 }}>
-                {[["job_title","Profile Name / Job Title",true],["job_formal_designation","Job Designation (Formal)"],["place_of_posting","Place of Posting",true],["registration_link","Registration Link (If Any)"],["bond_details","Bond Details (If Any)"],["onboarding","Onboarding to Company"]].map(([k,l,r])=>(
+            <Box sx={{ p: 3, display: "flex", flexDirection: "column", gap: 2.5 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                {[["job_title", "Profile Name / Job Title", true], ["job_formal_designation", "Job Designation (Formal)"], ["place_of_posting", "Place of Posting", true], ["registration_link", "Registration Link (If Any)"], ["bond_details", "Bond Details (If Any)"], ["onboarding", "Onboarding to Company"]].map(([k, l, r]) => (
                   <Box key={k as string}>
                     <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                    <TextField fullWidth size="small" value={(job as any)[k as string]} onChange={e=>setJob(p=>({...p,[k as string]:e.target.value}))} sx={inputSx} />
+                    <TextField fullWidth size="small" value={(job as any)[k as string]} onChange={e => setJob(p => ({ ...p, [k as string]: e.target.value }))} sx={inputSx} />
                   </Box>
                 ))}
                 <Box>
                   <FieldLabel>Work Location Mode</FieldLabel>
-                  <Select fullWidth size="small" value={job.work_mode} onChange={e=>setJob(p=>({...p,work_mode:e.target.value}))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
+                  <Select fullWidth size="small" value={job.work_mode} onChange={e => setJob(p => ({ ...p, work_mode: e.target.value }))} displayEmpty sx={{ borderRadius: 1.5, fontSize: "0.85rem", bgcolor: WHITE }}>
                     <MenuItem value="" disabled><em>Select</em></MenuItem>
-                    {["On-site","Remote","Hybrid"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
+                    {["On-site", "Remote", "Hybrid"].map(v => <MenuItem key={v} value={v} sx={{ fontSize: "0.85rem" }}>{v}</MenuItem>)}
                   </Select>
                 </Box>
                 <Box>
                   <FieldLabel required>Tentative Joining Month</FieldLabel>
-                  <TextField fullWidth size="small" type="month" value={job.joining_month} onChange={e=>setJob(p=>({...p,joining_month:e.target.value}))} sx={inputSx} />
+                  <TextField fullWidth size="small" type="month" value={job.joining_month} onChange={e => setJob(p => ({ ...p, joining_month: e.target.value }))} sx={inputSx} />
                 </Box>
                 <Box>
                   <FieldLabel required>Expected Hires</FieldLabel>
-                  <TextField fullWidth size="small" type="number" value={job.expected_hires} onChange={e=>setJob(p=>({...p,expected_hires:e.target.value}))} sx={inputSx} />
+                  <TextField fullWidth size="small" type="number" value={job.expected_hires} onChange={e => setJob(p => ({ ...p, expected_hires: e.target.value }))} sx={inputSx} />
                 </Box>
                 <Box>
                   <FieldLabel>Minimum Hires</FieldLabel>
-                  <TextField fullWidth size="small" type="number" value={job.min_hires} onChange={e=>setJob(p=>({...p,min_hires:e.target.value}))} sx={inputSx} />
+                  <TextField fullWidth size="small" type="number" value={job.min_hires} onChange={e => setJob(p => ({ ...p, min_hires: e.target.value }))} sx={inputSx} />
                 </Box>
               </Box>
               {/* Skills tags */}
               <Box>
                 <FieldLabel>Required Skills (Tags)</FieldLabel>
-                <Box sx={{display:"flex",gap:1,mb:0.8}}>
-                  <TextField fullWidth size="small" placeholder="Type skill, press Enter" value={skillInput} onChange={e=>setSkillInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"){e.preventDefault();if(skillInput.trim()&&!skills.includes(skillInput.trim())){setSkills(p=>[...p,skillInput.trim()]);}setSkillInput("");}}} sx={inputSx} />
-                  <Button variant="contained" size="small" onClick={()=>{if(skillInput.trim()){setSkills(p=>[...p,skillInput.trim()]);setSkillInput("");}}} sx={{bgcolor:MAROON,color:WHITE,minWidth:36,"&:hover":{bgcolor:RED}}}><AddIcon sx={{fontSize:18}} /></Button>
+                <Box sx={{ display: "flex", gap: 1, mb: 0.8 }}>
+                  <TextField fullWidth size="small" placeholder="Type skill, press Enter" value={skillInput} onChange={e => setSkillInput(e.target.value)} onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); if (skillInput.trim() && !skills.includes(skillInput.trim())) { setSkills(p => [...p, skillInput.trim()]); } setSkillInput(""); } }} sx={inputSx} />
+                  <Button variant="contained" size="small" onClick={() => { if (skillInput.trim()) { setSkills(p => [...p, skillInput.trim()]); setSkillInput(""); } }} sx={{ bgcolor: MAROON, color: WHITE, minWidth: 36, "&:hover": { bgcolor: RED } }}><AddIcon sx={{ fontSize: 18 }} /></Button>
                 </Box>
-                <Box sx={{display:"flex",flexWrap:"wrap",gap:0.5}}>
-                  {skills.map(s=><Chip key={s} label={s} size="small" onDelete={()=>setSkills(p=>p.filter(x=>x!==s))} sx={{fontSize:"0.7rem",bgcolor:"rgba(87,0,0,0.07)",color:MAROON,fontWeight:700}} />)}
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                  {skills.map(s => <Chip key={s} label={s} size="small" onDelete={() => setSkills(p => p.filter(x => x !== s))} sx={{ fontSize: "0.7rem", bgcolor: "rgba(87,0,0,0.07)", color: MAROON, fontWeight: 700 }} />)}
                 </Box>
               </Box>
               <Box>
                 <FieldLabel>Job Description</FieldLabel>
-                <TextField fullWidth multiline rows={5} size="small" value={job.job_description} onChange={e=>setJob(p=>({...p,job_description:e.target.value}))} sx={inputSx} />
+                <TextField fullWidth multiline rows={5} size="small" value={job.job_description} onChange={e => setJob(p => ({ ...p, job_description: e.target.value }))} sx={inputSx} />
               </Box>
-              <Box component="label" htmlFor="jd-up" sx={{display:"flex",alignItems:"center",gap:1.5,p:1.5,border:`1.5px dashed ${jdPdf?MAROON:BORDER}`,borderRadius:1.5,cursor:"pointer",bgcolor:jdPdf?"rgba(87,0,0,0.03)":SURFACE,"&:hover":{borderColor:MAROON}}}>
-                <CloudUploadIcon sx={{fontSize:18,color:jdPdf?MAROON:"#9CA3AF"}} />
-                <Typography sx={{fontSize:"0.78rem",color:jdPdf?MAROON:"#6B7280"}}>{jdPdf?jdPdf.name:"Upload JD as PDF (optional)"}</Typography>
-                <input id="jd-up" type="file" accept="application/pdf" hidden onChange={e=>setJdPdf(e.target.files?.[0]||null)} />
+              <Box component="label" htmlFor="jd-up" sx={{ display: "flex", alignItems: "center", gap: 1.5, p: 1.5, border: `1.5px dashed ${jdPdf ? MAROON : BORDER}`, borderRadius: 1.5, cursor: "pointer", bgcolor: jdPdf ? "rgba(87,0,0,0.03)" : SURFACE, "&:hover": { borderColor: MAROON } }}>
+                <CloudUploadIcon sx={{ fontSize: 18, color: jdPdf ? MAROON : "#9CA3AF" }} />
+                <Typography sx={{ fontSize: "0.78rem", color: jdPdf ? MAROON : "#6B7280" }}>{jdPdf ? jdPdf.name : "Upload JD as PDF (optional)"}</Typography>
+                <input id="jd-up" type="file" accept="application/pdf" hidden onChange={e => setJdPdf(e.target.files?.[0] || null)} />
               </Box>
               <Box>
                 <FieldLabel>Additional Job Info (1000 chars)</FieldLabel>
-                <TextField fullWidth multiline rows={3} size="small" inputProps={{maxLength:1000}} helperText={`${job.additional_info.length}/1000`} value={job.additional_info} onChange={e=>setJob(p=>({...p,additional_info:e.target.value}))} sx={inputSx} />
+                <TextField fullWidth multiline rows={3} size="small" inputProps={{ maxLength: 1000 }} helperText={`${job.additional_info.length}/1000`} value={job.additional_info} onChange={e => setJob(p => ({ ...p, additional_info: e.target.value }))} sx={inputSx} />
               </Box>
             </Box>
           </Paper>
@@ -822,53 +824,53 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 4: ELIGIBILITY ════════════════════════ */}
         {step === 2 && (
           <Box>
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2.5 }}>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2.5 }}>
               {/* <SectionHeader title="ELIGIBILITY & COURSES" /> */}
               {/* Global controls */}
-              <Box sx={{ p:2, bgcolor:"#111827", display:"flex", flexWrap:"wrap", gap:2, alignItems:"center" }}>
-                <Typography sx={{ color:"rgba(255,255,255,0.45)",fontSize:"0.62rem",fontWeight:800,textTransform:"uppercase",letterSpacing:0.5 }}>Global Controls</Typography>
-                <Box sx={{ display:"flex", alignItems:"center", gap:1 }}>
-                  <Typography sx={{ color:"rgba(255,255,255,0.7)", fontSize:"0.75rem",fontWeight:600 }}>Min CGPA:</Typography>
-                  <TextField size="small" value={globalCgpa} onChange={e=>setGlobalCgpa(e.target.value)} placeholder="e.g. 6.5" inputProps={{ style:{textAlign:"center"} }} sx={{ width:80,"& .MuiOutlinedInput-root":{bgcolor:WHITE,borderRadius:1,fontSize:"0.85rem",fontWeight:800} }} />
+              <Box sx={{ p: 2, bgcolor: "#111827", display: "flex", flexWrap: "wrap", gap: 2, alignItems: "center" }}>
+                <Typography sx={{ color: "rgba(255,255,255,0.45)", fontSize: "0.62rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5 }}>Global Controls</Typography>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 600 }}>Min CGPA:</Typography>
+                  <TextField size="small" value={globalCgpa} onChange={e => setGlobalCgpa(e.target.value)} placeholder="e.g. 6.5" inputProps={{ style: { textAlign: "center" } }} sx={{ width: 80, "& .MuiOutlinedInput-root": { bgcolor: WHITE, borderRadius: 1, fontSize: "0.85rem", fontWeight: 800 } }} />
                 </Box>
-                <Box sx={{ display:"flex", alignItems:"center", gap:1 }}>
-                  <Typography sx={{ color:"rgba(255,255,255,0.7)", fontSize:"0.75rem",fontWeight:600 }}>Backlogs:</Typography>
-                  <Box onClick={()=>setGlobalBacklogs(!globalBacklogs)} sx={{ px:1.5,py:0.4,borderRadius:1,cursor:"pointer",fontWeight:800,fontSize:"0.72rem",bgcolor:globalBacklogs?"#DCFCE7":"#FEE2E2",color:globalBacklogs?"#059669":"#C41230",border:`1px solid ${globalBacklogs?"#A7F3D0":"#FECACA"}` }}>
-                    {globalBacklogs?"✓ YES":"✗ NO"}
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 600 }}>Backlogs:</Typography>
+                  <Box onClick={() => setGlobalBacklogs(!globalBacklogs)} sx={{ px: 1.5, py: 0.4, borderRadius: 1, cursor: "pointer", fontWeight: 800, fontSize: "0.72rem", bgcolor: globalBacklogs ? "#DCFCE7" : "#FEE2E2", color: globalBacklogs ? "#059669" : "#C41230", border: `1px solid ${globalBacklogs ? "#A7F3D0" : "#FECACA"}` }}>
+                    {globalBacklogs ? "✓ YES" : "✗ NO"}
                   </Box>
                 </Box>
                 <Button variant="contained" size="small"
-                  onClick={()=>setEligibility(prev=>{const n={...prev};Object.keys(n).forEach(p=>Object.keys(n[p]).forEach(b=>{if(n[p][b].checked)n[p][b]={...n[p][b],cgpa:globalCgpa,backlogs:globalBacklogs};}));return n;})}
-                  sx={{ bgcolor:"#B45309",color:WHITE,textTransform:"none",fontWeight:800,fontSize:"0.72rem","&:hover":{bgcolor:"#92400E"} }}>
+                  onClick={() => setEligibility(prev => { const n = { ...prev }; Object.keys(n).forEach(p => Object.keys(n[p]).forEach(b => { if (n[p][b].checked) n[p][b] = { ...n[p][b], cgpa: globalCgpa, backlogs: globalBacklogs }; })); return n; })}
+                  sx={{ bgcolor: "#B45309", color: WHITE, textTransform: "none", fontWeight: 800, fontSize: "0.72rem", "&:hover": { bgcolor: "#92400E" } }}>
                   ▶ Apply Global to Selected
                 </Button>
               </Box>
             </Paper>
-            <Box sx={{ display:"grid", gridTemplateColumns:{xs:"1fr",lg:"1fr 1fr"}, gap:2 }}>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", lg: "1fr 1fr" }, gap: 2 }}>
               {Object.entries(PROGRAMMES).map(([prog, branches]) => {
-                const allChecked = branches.length>0 && branches.every(b=>eligibility[prog]?.[b]?.checked);
+                const allChecked = branches.length > 0 && branches.every(b => eligibility[prog]?.[b]?.checked);
                 return (
-                  <Paper key={prog} elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
-                    <Box sx={{ px:2,py:1.2,bgcolor:MAROON,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                      <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.78rem" }}>{prog}</Typography>
-                      <Button size="small" onClick={()=>{if(allChecked){branches.filter(b=>eligibility[prog]?.[b]?.checked).forEach(b=>toggleBranch(prog,b));}else{branches.filter(b=>!eligibility[prog]?.[b]?.checked).forEach(b=>toggleBranch(prog,b));}}} sx={{ color:WHITE,textTransform:"none",fontSize:"0.68rem",fontWeight:700,py:0.2,"&:hover":{bgcolor:"rgba(255,255,255,0.1)"} }}>
-                        {allChecked?"Deselect All":"Select All"}
+                  <Paper key={prog} elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
+                    <Box sx={{ px: 2, py: 1.2, bgcolor: MAROON, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.78rem" }}>{prog}</Typography>
+                      <Button size="small" onClick={() => { if (allChecked) { branches.filter(b => eligibility[prog]?.[b]?.checked).forEach(b => toggleBranch(prog, b)); } else { branches.filter(b => !eligibility[prog]?.[b]?.checked).forEach(b => toggleBranch(prog, b)); } }} sx={{ color: WHITE, textTransform: "none", fontSize: "0.68rem", fontWeight: 700, py: 0.2, "&:hover": { bgcolor: "rgba(255,255,255,0.1)" } }}>
+                        {allChecked ? "Deselect All" : "Select All"}
                       </Button>
                     </Box>
-                    <Box sx={{ px:1.5,py:0.5,bgcolor:"#F9FAFB",borderBottom:`1px solid ${BORDER}`,display:"flex",gap:2 }}>
-                      <Typography sx={{ fontSize:"0.58rem",fontWeight:800,color:"#9CA3AF",flex:1,textTransform:"uppercase",letterSpacing:0.3 }}>Branch / Specialisation</Typography>
-                      <Typography sx={{ fontSize:"0.58rem",fontWeight:800,color:"#9CA3AF",width:64,textAlign:"center",textTransform:"uppercase",letterSpacing:0.3 }}>CGPA</Typography>
-                      <Typography sx={{ fontSize:"0.58rem",fontWeight:800,color:"#9CA3AF",width:52,textAlign:"center",textTransform:"uppercase",letterSpacing:0.3 }}>Backlogs</Typography>
+                    <Box sx={{ px: 1.5, py: 0.5, bgcolor: "#F9FAFB", borderBottom: `1px solid ${BORDER}`, display: "flex", gap: 2 }}>
+                      <Typography sx={{ fontSize: "0.58rem", fontWeight: 800, color: "#9CA3AF", flex: 1, textTransform: "uppercase", letterSpacing: 0.3 }}>Branch / Specialisation</Typography>
+                      <Typography sx={{ fontSize: "0.58rem", fontWeight: 800, color: "#9CA3AF", width: 64, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.3 }}>CGPA</Typography>
+                      <Typography sx={{ fontSize: "0.58rem", fontWeight: 800, color: "#9CA3AF", width: 52, textAlign: "center", textTransform: "uppercase", letterSpacing: 0.3 }}>Backlogs</Typography>
                     </Box>
                     {branches.map(b => {
-                      const d = eligibility[prog]?.[b] ?? { checked:false, cgpa:"", backlogs:true };
+                      const d = eligibility[prog]?.[b] ?? { checked: false, cgpa: "", backlogs: true };
                       return (
-                        <Box key={b} sx={{ display:"flex",alignItems:"center",gap:1,py:0.7,px:1.5,bgcolor:d.checked?"rgba(87,0,0,0.03)":WHITE,borderBottom:`1px solid ${BORDER}`,"&:last-child":{borderBottom:0} }}>
-                          <Checkbox size="small" checked={d.checked} onChange={()=>toggleBranch(prog,b)} sx={{ color:MAROON,"&.Mui-checked":{color:MAROON},p:0.4 }} />
-                          <Typography sx={{ fontSize:"0.75rem",flex:1,color:d.checked?"#111827":"#6B7280",fontWeight:d.checked?600:400 }}>{b}</Typography>
-                          <TextField size="small" placeholder="7.0" value={d.cgpa} onChange={e=>setBranchCgpa(prog,b,e.target.value)} disabled={!d.checked} sx={{ width:60,"& .MuiOutlinedInput-root":{fontSize:"0.72rem",borderRadius:1,bgcolor:d.checked?WHITE:SURFACE} }} />
-                          <Box onClick={()=>d.checked&&setBranchBacklogs(prog,b,!d.backlogs)} sx={{ minWidth:48,px:0.8,py:0.25,borderRadius:1,textAlign:"center",bgcolor:d.backlogs?"#DCFCE7":"#FEE2E2",color:d.backlogs?"#059669":"#C41230",fontWeight:800,fontSize:"0.6rem",cursor:d.checked?"pointer":"default",opacity:d.checked?1:0.4,userSelect:"none",border:`1px solid ${d.backlogs?"#A7F3D0":"#FECACA"}` }}>
-                            {d.backlogs?"✓ YES":"✗ NO"}
+                        <Box key={b} sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.7, px: 1.5, bgcolor: d.checked ? "rgba(87,0,0,0.03)" : WHITE, borderBottom: `1px solid ${BORDER}`, "&:last-child": { borderBottom: 0 } }}>
+                          <Checkbox size="small" checked={d.checked} onChange={() => toggleBranch(prog, b)} sx={{ color: MAROON, "&.Mui-checked": { color: MAROON }, p: 0.4 }} />
+                          <Typography sx={{ fontSize: "0.75rem", flex: 1, color: d.checked ? "#111827" : "#6B7280", fontWeight: d.checked ? 600 : 400 }}>{b}</Typography>
+                          <TextField size="small" placeholder="7.0" value={d.cgpa} onChange={e => setBranchCgpa(prog, b, e.target.value)} disabled={!d.checked} sx={{ width: 60, "& .MuiOutlinedInput-root": { fontSize: "0.72rem", borderRadius: 1, bgcolor: d.checked ? WHITE : SURFACE } }} />
+                          <Box onClick={() => d.checked && setBranchBacklogs(prog, b, !d.backlogs)} sx={{ minWidth: 48, px: 0.8, py: 0.25, borderRadius: 1, textAlign: "center", bgcolor: d.backlogs ? "#DCFCE7" : "#FEE2E2", color: d.backlogs ? "#059669" : "#C41230", fontWeight: 800, fontSize: "0.6rem", cursor: d.checked ? "pointer" : "default", opacity: d.checked ? 1 : 0.4, userSelect: "none", border: `1px solid ${d.backlogs ? "#A7F3D0" : "#FECACA"}` }}>
+                            {d.backlogs ? "✓ YES" : "✗ NO"}
                           </Box>
                         </Box>
                       );
@@ -882,45 +884,45 @@ export default function JnfNewPage() {
 
         {/* ══════════════════ STEP 5: SALARY ════════════════════════════ */}
         {step === 3 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
+          <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
             {/* <SectionHeader title="SALARY DETAILS" /> */}
-            <Box sx={{ p:3 }}>
+            <Box sx={{ p: 3 }}>
               {/* Currency */}
-              <Box sx={{ display:"flex", alignItems:"center", gap:2, mb:2 }}>
-                <Typography sx={{ fontWeight:700,fontSize:"0.75rem",color:"#374151" }}>★ Currency:</Typography>
-                {["INR","USD","EUR"].map(c=><Chip key={c} label={c} size="small" onClick={()=>setCurrency(c)} sx={{ fontWeight:800,fontSize:"0.7rem",bgcolor:currency===c?MAROON:SURFACE,color:currency===c?WHITE:"#374151",border:`1px solid ${currency===c?MAROON:BORDER}`,cursor:"pointer" }} />)}
+              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+                <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", color: "#374151" }}>★ Currency:</Typography>
+                {["INR", "USD", "EUR"].map(c => <Chip key={c} label={c} size="small" onClick={() => setCurrency(c)} sx={{ fontWeight: 800, fontSize: "0.7rem", bgcolor: currency === c ? MAROON : SURFACE, color: currency === c ? WHITE : "#374151", border: `1px solid ${currency === c ? MAROON : BORDER}`, cursor: "pointer" }} />)}
               </Box>
               {/* Table header */}
-              <Box sx={{ display:"grid",gridTemplateColumns:"180px 1fr 1fr 1fr",gap:1,py:1,mb:0.5,bgcolor:MAROON,px:1.5,borderRadius:1 }}>
-                {["Programme","CTC (Annual)","Base / Fixed","In Hand"].map(h=><Typography key={h} sx={{ color:WHITE,fontWeight:800,fontSize:"0.68rem",textTransform:"uppercase",letterSpacing:0.3 }}>{h}</Typography>)}
+              <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 1, py: 1, mb: 0.5, bgcolor: MAROON, px: 1.5, borderRadius: 1 }}>
+                {["Programme", "CTC (Annual)", "Base / Fixed", "In Hand"].map(h => <Typography key={h} sx={{ color: WHITE, fontWeight: 800, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: 0.3 }}>{h}</Typography>)}
               </Box>
-              <Box sx={{ border:`1px solid ${BORDER}`,borderRadius:1.5,overflow:"hidden",p:1.5 }}>
-                {SALARY_PROGS.map(prog=>(
-                  <Box key={prog} sx={{ display:"grid",gridTemplateColumns:"180px 1fr 1fr 1fr",gap:1,alignItems:"center",py:1,borderBottom:`1px solid ${BORDER}`,"&:last-child":{borderBottom:0} }}>
-                    <Typography sx={{ fontSize:"0.8rem",fontWeight:600,color:"#374151" }}>{prog}</Typography>
-                    {["ctc","base","inhand"].map(k=>(
-                      <TextField key={k} size="small" placeholder="e.g. 12 LPA" value={(salary[prog] as any)[k]} onChange={e=>setSalary(p=>({...p,[prog]:{...(p[prog] as any),[k]:e.target.value}}))} sx={inputSx} />
+              <Box sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", p: 1.5 }}>
+                {SALARY_PROGS.map(prog => (
+                  <Box key={prog} sx={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 1, alignItems: "center", py: 1, borderBottom: `1px solid ${BORDER}`, "&:last-child": { borderBottom: 0 } }}>
+                    <Typography sx={{ fontSize: "0.8rem", fontWeight: 600, color: "#374151" }}>{prog}</Typography>
+                    {["ctc", "base", "inhand"].map(k => (
+                      <TextField key={k} size="small" placeholder="e.g. 12 LPA" value={(salary[prog] as any)[k]} onChange={e => setSalary(p => ({ ...p, [prog]: { ...(p[prog] as any), [k]: e.target.value } }))} sx={inputSx} />
                     ))}
                   </Box>
                 ))}
               </Box>
               {/* Additional Salary Components — accordion per programme */}
-              <Box sx={{ mt:3 }}>
-                <Box sx={{ bgcolor:MAROON,px:2,py:1.2,borderRadius:"8px 8px 0 0" }}>
-                  <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.8rem" }}>ADDITIONAL SALARY COMPONENTS</Typography>
+              <Box sx={{ mt: 3 }}>
+                <Box sx={{ bgcolor: MAROON, px: 2, py: 1.2, borderRadius: "8px 8px 0 0" }}>
+                  <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.8rem" }}>ADDITIONAL SALARY COMPONENTS</Typography>
                 </Box>
                 {SALARY_PROGS.map((prog, idx) => (
-                  <Accordion key={prog} defaultExpanded={idx===0} disableGutters elevation={0} sx={{ border:`1px solid ${BORDER}`,borderTop:0,"&:before":{display:"none"} }}>
-                    <AccordionSummary expandIcon={<KeyboardArrowDownIcon />}
-                      sx={{ bgcolor:idx===0?"rgba(87,0,0,0.05)":"#F9FAFB","& .MuiAccordionSummary-content":{my:0.5} }}>
-                      <Typography sx={{ fontWeight:700,fontSize:"0.8rem",color:MAROON }}>{prog}</Typography>
+                  <Accordion key={prog} defaultExpanded={idx === 0} disableGutters elevation={0} sx={{ border: `1px solid ${BORDER}`, borderTop: 0, "&:before": { display: "none" } }}>
+                    <AccordionSummary expandIcon={<ExpandMoreIcon />}
+                      sx={{ bgcolor: idx === 0 ? "rgba(87,0,0,0.05)" : "#F9FAFB", "& .MuiAccordionSummary-content": { my: 0.5 } }}>
+                      <Typography sx={{ fontWeight: 700, fontSize: "0.8rem", color: MAROON }}>{prog}</Typography>
                     </AccordionSummary>
                     <AccordionDetails>
-                      <Box sx={{ display:"grid",gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr"},gap:2 }}>
-                        {[["joining_bonus","Joining Bonus"],["esops","ESOPs + Vest Period"],["retention_bonus","Retention Bonus"],["relocation","Relocation Allowance"],["bond_deductions","Bond / Deductions"]].map(([k,l])=>(
+                      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
+                        {[["joining_bonus", "Joining Bonus"], ["esops", "ESOPs + Vest Period"], ["retention_bonus", "Retention Bonus"], ["relocation", "Relocation Allowance"], ["bond_deductions", "Bond / Deductions"]].map(([k, l]) => (
                           <Box key={k}>
                             <FieldLabel>{l}</FieldLabel>
-                            <TextField fullWidth size="small" placeholder="Amount or details" value={(additionalSalary[prog] as any)?.[k]||""} onChange={e=>setAdditionalSalary(p=>({...p,[prog]:{...(p[prog] as any),[k]:e.target.value}}))} sx={inputSx} />
+                            <TextField fullWidth size="small" placeholder="Amount or details" value={(additionalSalary[prog] as any)?.[k] || ""} onChange={e => setAdditionalSalary(p => ({ ...p, [prog]: { ...(p[prog] as any), [k]: e.target.value } }))} sx={inputSx} />
                           </Box>
                         ))}
                       </Box>
@@ -934,113 +936,113 @@ export default function JnfNewPage() {
 
         {/* ══════════════════ STEP 6: SELECTION PROCESS ═════════════════ */}
         {step === 4 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
+          <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
             {/* <SectionHeader title="SELECTION PROCESS" /> */}
-            <Box sx={{ p:3 }}>
+            <Box sx={{ p: 3 }}>
               {/* Existing stages */}
-              <Box sx={{ mb:2, bgcolor:"rgba(87,0,0,0.04)", border:`1px solid ${BORDER}`, borderRadius:1.5, p:2 }}>
-                <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:MAROON,textTransform:"uppercase",letterSpacing:0.5,mb:2 }}>EXISTING STAGES (Retained from current JNF)</Typography>
-                <Box sx={{ display:"flex", flexWrap:"wrap", gap:2, justifyContent:"center" }}>
-                  {SELECTION_STAGES_LIST.map(s=>(
-                    <Box key={s.key} onClick={()=>setStages(p=>({...p,[s.key]:!p[s.key]}))} sx={{ display:"flex",flexDirection:"column",alignItems:"center",gap:1,cursor:"pointer",userSelect:"none" }}>
-                      <Box sx={{ width:64,height:64,borderRadius:"50%",bgcolor:stages[s.key]?MAROON:"#374151",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:stages[s.key]?`0 0 0 3px rgba(87,0,0,0.3)`:"none",transition:"all 0.2s" }}>
+              <Box sx={{ mb: 2, bgcolor: "rgba(87,0,0,0.04)", border: `1px solid ${BORDER}`, borderRadius: 1.5, p: 2 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: MAROON, textTransform: "uppercase", letterSpacing: 0.5, mb: 2 }}>EXISTING STAGES (Retained from current JNF)</Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, justifyContent: "center" }}>
+                  {SELECTION_STAGES_LIST.map(s => (
+                    <Box key={s.key} onClick={() => setStages(p => ({ ...p, [s.key]: !p[s.key] }))} sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1, cursor: "pointer", userSelect: "none" }}>
+                      <Box sx={{ width: 64, height: 64, borderRadius: "50%", bgcolor: stages[s.key] ? MAROON : "#374151", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: stages[s.key] ? `0 0 0 3px rgba(87,0,0,0.3)` : "none", transition: "all 0.2s" }}>
                         {stages[s.key]
-                          ? <CheckCircleOutlineIcon sx={{ color:WHITE,fontSize:28 }} />
-                          : <Box sx={{ width:24,height:24,border:"2px solid rgba(255,255,255,0.4)",borderRadius:0.5 }} />}
+                          ? <CheckCircleOutlineIcon sx={{ color: WHITE, fontSize: 28 }} />
+                          : <Box sx={{ width: 24, height: 24, border: "2px solid rgba(255,255,255,0.4)", borderRadius: 0.5 }} />}
                       </Box>
-                      <Typography sx={{ fontSize:"0.65rem",fontWeight:600,color:stages[s.key]?MAROON:"#6B7280",textAlign:"center",maxWidth:80,whiteSpace:"pre-line" }}>{s.label}</Typography>
+                      <Typography sx={{ fontSize: "0.65rem", fontWeight: 600, color: stages[s.key] ? MAROON : "#6B7280", textAlign: "center", maxWidth: 80, whiteSpace: "pre-line" }}>{s.label}</Typography>
                     </Box>
                   ))}
                 </Box>
               </Box>
 
               {/* New additions */}
-              <Box sx={{ mb:2, bgcolor:"#FFFBEB", border:"1px solid #FCD34D", borderRadius:1.5, px:2, py:1 }}>
-                <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:"#B45309",textTransform:"uppercase",letterSpacing:0.5 }}>★ NEW ADDITIONS FROM GAP ANALYSIS</Typography>
+              <Box sx={{ mb: 2, bgcolor: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: 1.5, px: 2, py: 1 }}>
+                <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: "#B45309", textTransform: "uppercase", letterSpacing: 0.5 }}>★ NEW ADDITIONS FROM GAP ANALYSIS</Typography>
               </Box>
 
-              <Box sx={{ display:"grid",gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr"},gap:2,mb:2 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2, mb: 2 }}>
                 <Box>
                   <FieldLabel>Selection Mode (per stage)</FieldLabel>
-                  <Select fullWidth size="small" value={selectionMode} onChange={e=>setSelectionMode(e.target.value)} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
+                  <Select fullWidth size="small" value={selectionMode} onChange={e => setSelectionMode(e.target.value)} displayEmpty sx={{ borderRadius: 1.5, fontSize: "0.85rem", bgcolor: WHITE }}>
                     <MenuItem value="" disabled><em>Select</em></MenuItem>
-                    {["Online","Offline","Hybrid"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
+                    {["Online", "Offline", "Hybrid"].map(v => <MenuItem key={v} value={v} sx={{ fontSize: "0.85rem" }}>{v}</MenuItem>)}
                   </Select>
                 </Box>
                 <Box>
                   <FieldLabel>Test Type</FieldLabel>
-                  <Select fullWidth size="small" value={testType} onChange={e=>setTestType(e.target.value)} displayEmpty sx={{borderRadius:1.5,fontSize:"0.85rem",bgcolor:WHITE}}>
+                  <Select fullWidth size="small" value={testType} onChange={e => setTestType(e.target.value)} displayEmpty sx={{ borderRadius: 1.5, fontSize: "0.85rem", bgcolor: WHITE }}>
                     <MenuItem value="" disabled><em>Select</em></MenuItem>
-                    {["Aptitude","Technical","Written","Aptitude + Technical","Other"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.85rem"}}>{v}</MenuItem>)}
+                    {["Aptitude", "Technical", "Written", "Aptitude + Technical", "Other"].map(v => <MenuItem key={v} value={v} sx={{ fontSize: "0.85rem" }}>{v}</MenuItem>)}
                   </Select>
                 </Box>
               </Box>
 
               {/* Interview Modes */}
-              <Box sx={{ mb:2 }}>
+              <Box sx={{ mb: 2 }}>
                 <FieldLabel>Interview Modes</FieldLabel>
-                <Box sx={{ display:"flex", flexWrap:"wrap", gap:1 }}>
-                  {["On-campus","Telephonic","Video Conferencing (Zoom/Teams)"].map(m=>(
-                    <FormControlLabel key={m} control={<Checkbox size="small" checked={interviewModes.includes(m)} onChange={()=>setInterviewModes(p=>p.includes(m)?p.filter(x=>x!==m):[...p,m])} sx={{ color:MAROON,"&.Mui-checked":{color:MAROON} }} />} label={<Typography sx={{ fontSize:"0.8rem" }}>{m}</Typography>} />
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                  {["On-campus", "Online", "Telephonic", "Video Conferencing (Zoom/Teams)"].map(m => (
+                    <FormControlLabel key={m} control={<Checkbox size="small" checked={interviewModes.includes(m)} onChange={() => setInterviewModes(p => p.includes(m) ? p.filter(x => x !== m) : [...p, m])} sx={{ color: MAROON, "&.Mui-checked": { color: MAROON } }} />} label={<Typography sx={{ fontSize: "0.8rem" }}>{m}</Typography>} />
                   ))}
                 </Box>
               </Box>
 
               {/* Toggles */}
-              <Box sx={{ display:"flex", gap:4, flexWrap:"wrap", mb:2 }}>
-                {[["Psychometric Test (before offer)",psychometricTest,setPsychometricTest],["Medical Test (before offer)",medicalTest,setMedicalTest]].map(([l,v,s])=>(
-                  <Box key={l as string} sx={{ display:"flex",alignItems:"center",gap:1 }}>
-                    <Switch checked={!!v} onChange={e=>(s as any)(e.target.checked)} size="small" sx={{ "& .MuiSwitch-thumb":{bgcolor:v?MAROON:undefined},"& .MuiSwitch-track":{bgcolor:v?"rgba(87,0,0,0.4)!important":undefined} }} />
-                    <Typography sx={{ fontSize:"0.8rem",fontWeight:600 }}>{l as string}</Typography>
+              <Box sx={{ display: "flex", gap: 4, flexWrap: "wrap", mb: 2 }}>
+                {[["Psychometric Test (before offer)", psychometricTest, setPsychometricTest], ["Medical Test (before offer)", medicalTest, setMedicalTest]].map(([l, v, s]) => (
+                  <Box key={l as string} sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                    <Switch checked={!!v} onChange={e => (s as any)(e.target.checked)} size="small" sx={{ "& .MuiSwitch-thumb": { bgcolor: v ? MAROON : undefined }, "& .MuiSwitch-track": { bgcolor: v ? "rgba(87,0,0,0.4)!important" : undefined } }} />
+                    <Typography sx={{ fontSize: "0.8rem", fontWeight: 600 }}>{l as string}</Typography>
                   </Box>
                 ))}
               </Box>
 
               {/* Dynamic rounds */}
-              <Box sx={{ mb:2 }}>
-                <Box sx={{ display:"flex",justifyContent:"space-between",alignItems:"center",mb:1 }}>
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                   <FieldLabel>Test Rounds (up to 10)</FieldLabel>
-                  <Button size="small" startIcon={<AddIcon/>} onClick={addTestRound} disabled={testRounds.length>=10} sx={{textTransform:"none",color:MAROON,fontSize:"0.72rem"}}>Add Round</Button>
+                  <Button size="small" startIcon={<AddIcon />} onClick={addTestRound} disabled={testRounds.length >= 10} sx={{ textTransform: "none", color: MAROON, fontSize: "0.72rem" }}>Add Round</Button>
                 </Box>
-                {testRounds.map((r,i)=>(
-                  <Box key={i} sx={{ display:"grid",gridTemplateColumns:"1fr 100px 120px 36px",gap:1,mb:1,alignItems:"center" }}>
-                    <TextField size="small" placeholder={`Round ${i+1} name`} value={r.name} onChange={e=>setTestRounds(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))} sx={inputSx} />
-                    <TextField size="small" placeholder="Mins" value={r.duration} onChange={e=>setTestRounds(p=>p.map((x,j)=>j===i?{...x,duration:e.target.value}:x))} sx={inputSx} />
-                    <Select size="small" value={r.type} onChange={e=>setTestRounds(p=>p.map((x,j)=>j===i?{...x,type:e.target.value}:x))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.82rem",bgcolor:WHITE}}>
+                {testRounds.map((r, i) => (
+                  <Box key={i} sx={{ display: "grid", gridTemplateColumns: "1fr 100px 120px 36px", gap: 1, mb: 1, alignItems: "center" }}>
+                    <TextField size="small" placeholder={`Round ${i + 1} name`} value={r.name} onChange={e => setTestRounds(p => p.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} sx={inputSx} />
+                    <TextField size="small" placeholder="Mins" value={r.duration} onChange={e => setTestRounds(p => p.map((x, j) => j === i ? { ...x, duration: e.target.value } : x))} sx={inputSx} />
+                    <Select size="small" value={r.type} onChange={e => setTestRounds(p => p.map((x, j) => j === i ? { ...x, type: e.target.value } : x))} displayEmpty sx={{ borderRadius: 1.5, fontSize: "0.82rem", bgcolor: WHITE }}>
                       <MenuItem value="" disabled><em>Type</em></MenuItem>
-                      {["Aptitude","Technical","Written","Other"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.82rem"}}>{v}</MenuItem>)}
+                      {["Aptitude", "Technical", "Written", "Other"].map(v => <MenuItem key={v} value={v} sx={{ fontSize: "0.82rem" }}>{v}</MenuItem>)}
                     </Select>
-                    {i>0&&<IconButton size="small" onClick={()=>setTestRounds(p=>p.filter((_,j)=>j!==i))} sx={{color:"#EF4444"}}><DeleteOutlineIcon sx={{fontSize:16}} /></IconButton>}
+                    {i > 0 && <IconButton size="small" onClick={() => setTestRounds(p => p.filter((_, j) => j !== i))} sx={{ color: "#EF4444" }}><DeleteOutlineIcon sx={{ fontSize: 16 }} /></IconButton>}
                   </Box>
                 ))}
               </Box>
 
-              <Box sx={{ mb:2 }}>
-                <Box sx={{ display:"flex",justifyContent:"space-between",alignItems:"center",mb:1 }}>
+              <Box sx={{ mb: 2 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
                   <FieldLabel>Interview Rounds (up to 10)</FieldLabel>
-                  <Button size="small" startIcon={<AddIcon/>} onClick={addInterviewRound} disabled={interviewRounds.length>=10} sx={{textTransform:"none",color:MAROON,fontSize:"0.72rem"}}>Add Round</Button>
+                  <Button size="small" startIcon={<AddIcon />} onClick={addInterviewRound} disabled={interviewRounds.length >= 10} sx={{ textTransform: "none", color: MAROON, fontSize: "0.72rem" }}>Add Round</Button>
                 </Box>
-                {interviewRounds.map((r,i)=>(
-                  <Box key={i} sx={{ display:"grid",gridTemplateColumns:"1fr 100px 140px 36px",gap:1,mb:1,alignItems:"center" }}>
-                    <TextField size="small" placeholder={`Round ${i+1} name`} value={r.name} onChange={e=>setInterviewRounds(p=>p.map((x,j)=>j===i?{...x,name:e.target.value}:x))} sx={inputSx} />
-                    <TextField size="small" placeholder="Mins" value={r.duration} onChange={e=>setInterviewRounds(p=>p.map((x,j)=>j===i?{...x,duration:e.target.value}:x))} sx={inputSx} />
-                    <Select size="small" value={r.mode} onChange={e=>setInterviewRounds(p=>p.map((x,j)=>j===i?{...x,mode:e.target.value}:x))} displayEmpty sx={{borderRadius:1.5,fontSize:"0.82rem",bgcolor:WHITE}}>
+                {interviewRounds.map((r, i) => (
+                  <Box key={i} sx={{ display: "grid", gridTemplateColumns: "1fr 100px 140px 36px", gap: 1, mb: 1, alignItems: "center" }}>
+                    <TextField size="small" placeholder={`Round ${i + 1} name`} value={r.name} onChange={e => setInterviewRounds(p => p.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} sx={inputSx} />
+                    <TextField size="small" placeholder="Mins" value={r.duration} onChange={e => setInterviewRounds(p => p.map((x, j) => j === i ? { ...x, duration: e.target.value } : x))} sx={inputSx} />
+                    <Select size="small" value={r.mode} onChange={e => setInterviewRounds(p => p.map((x, j) => j === i ? { ...x, mode: e.target.value } : x))} displayEmpty sx={{ borderRadius: 1.5, fontSize: "0.82rem", bgcolor: WHITE }}>
                       <MenuItem value="" disabled><em>Mode</em></MenuItem>
-                      {["On-campus","Telephonic","Video Conferencing"].map(v=><MenuItem key={v} value={v} sx={{fontSize:"0.82rem"}}>{v}</MenuItem>)}
+                      {["On-campus", "Online", "Telephonic", "Video Conferencing"].map(v => <MenuItem key={v} value={v} sx={{ fontSize: "0.82rem" }}>{v}</MenuItem>)}
                     </Select>
-                    {i>0&&<IconButton size="small" onClick={()=>setInterviewRounds(p=>p.filter((_,j)=>j!==i))} sx={{color:"#EF4444"}}><DeleteOutlineIcon sx={{fontSize:16}} /></IconButton>}
+                    {i > 0 && <IconButton size="small" onClick={() => setInterviewRounds(p => p.filter((_, j) => j !== i))} sx={{ color: "#EF4444" }}><DeleteOutlineIcon sx={{ fontSize: 16 }} /></IconButton>}
                   </Box>
                 ))}
               </Box>
 
-              <Box sx={{ display:"grid",gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr"},gap:2 }}>
+              <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 2 }}>
                 <Box>
                   <FieldLabel>Infrastructure Required (on campus)</FieldLabel>
-                  <TextField fullWidth size="small" multiline rows={2} placeholder="e.g. 2 interview rooms, 1 PPT hall" value={infrastructure} onChange={e=>setInfrastructure(e.target.value)} sx={inputSx} />
+                  <TextField fullWidth size="small" multiline rows={2} placeholder="e.g. 2 interview rooms, 1 PPT hall" value={infrastructure} onChange={e => setInfrastructure(e.target.value)} sx={inputSx} />
                 </Box>
                 <Box>
                   <FieldLabel>Other Screening (free text)</FieldLabel>
-                  <TextField fullWidth size="small" multiline rows={2} placeholder="Any additional screening steps..." value={otherScreening} onChange={e=>setOtherScreening(e.target.value)} sx={inputSx} />
+                  <TextField fullWidth size="small" multiline rows={2} placeholder="Any additional screening steps..." value={otherScreening} onChange={e => setOtherScreening(e.target.value)} sx={inputSx} />
                 </Box>
               </Box>
             </Box>
@@ -1049,51 +1051,51 @@ export default function JnfNewPage() {
 
         {/* ══════════════════ STEP 7: DECLARATION ════════════════════════ */}
         {step === 5 && (
-          <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden" }}>
+          <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden" }}>
             {/* <SectionHeader title="DECLARATION & SUBMIT" /> */}
-            <Box sx={{ p:3, display:"grid", gridTemplateColumns:{xs:"1fr",md:"1fr 1fr"}, gap:3 }}>
+            <Box sx={{ p: 3, display: "grid", gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" }, gap: 3 }}>
               {/* Left */}
               <Box>
-                <Box sx={{ bgcolor:MAROON,color:WHITE,px:2,py:1,borderRadius:1,mb:2,fontSize:"0.72rem",fontWeight:800,letterSpacing:0.4 }}>
+                <Box sx={{ bgcolor: MAROON, color: WHITE, px: 2, py: 1, borderRadius: 1, mb: 2, fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.4 }}>
                   UNIFORM DECLARATION (Retained from current form)
                 </Box>
                 {DECLARATION_ITEMS.map((item, i) => (
-                  <FormControlLabel key={i} control={<Checkbox checked={declarations[i]} onChange={()=>setDeclarations(p=>{const n=[...p];n[i]=!n[i];return n;})} sx={{color:MAROON,"&.Mui-checked":{color:MAROON}}} />}
-                    label={<Typography sx={{fontSize:"0.78rem",color:"#374151"}}>{item}</Typography>}
-                    sx={{display:"flex",alignItems:"flex-start",mb:1,border:`1px solid ${BORDER}`,borderRadius:1,px:1.5,py:1,bgcolor:declarations[i]?"rgba(87,0,0,0.03)":WHITE}} />
+                  <FormControlLabel key={i} control={<Checkbox checked={declarations[i]} onChange={() => setDeclarations(p => { const n = [...p]; n[i] = !n[i]; return n; })} sx={{ color: MAROON, "&.Mui-checked": { color: MAROON } }} />}
+                    label={<Typography sx={{ fontSize: "0.78rem", color: "#374151" }}>{item}</Typography>}
+                    sx={{ display: "flex", alignItems: "flex-start", mb: 1, border: `1px solid ${BORDER}`, borderRadius: 1, px: 1.5, py: 1, bgcolor: declarations[i] ? "rgba(87,0,0,0.03)" : WHITE }} />
                 ))}
               </Box>
               {/* Right */}
               <Box>
-                <Box sx={{ bgcolor:"#B45309",color:WHITE,px:2,py:1,borderRadius:1,mb:2,fontSize:"0.72rem",fontWeight:800,letterSpacing:0.4 }}>
+                <Box sx={{ bgcolor: "#B45309", color: WHITE, px: 2, py: 1, borderRadius: 1, mb: 2, fontSize: "0.72rem", fontWeight: 800, letterSpacing: 0.4 }}>
                   ★ NEW ADDITIONS
                 </Box>
-                <Box sx={{ border:`1px solid ${BORDER}`,borderRadius:1.5,p:2,mb:2 }}>
-                  <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:MAROON,mb:1.5,textTransform:"uppercase",letterSpacing:0.4 }}>Self-Declaration (Authorised Signatory)</Typography>
-                  {[["signatoryName","Authorised Signatory Name",setSignatoryName,true],["signatoryDesignation","Designation",setSignatoryDesignation,true]].map(([k,l,s,r])=>(
-                    <Box key={k as string} sx={{mb:1.5}}>
+                <Box sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, p: 2, mb: 2 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: MAROON, mb: 1.5, textTransform: "uppercase", letterSpacing: 0.4 }}>Self-Declaration (Authorised Signatory)</Typography>
+                  {[["signatoryName", "Authorised Signatory Name", setSignatoryName, true], ["signatoryDesignation", "Designation", setSignatoryDesignation, true]].map(([k, l, s, r]) => (
+                    <Box key={k as string} sx={{ mb: 1.5 }}>
                       <FieldLabel required={!!r}>{l as string}</FieldLabel>
-                      <TextField fullWidth size="small" value={k==="signatoryName"?signatoryName:signatoryDesignation} onChange={e=>(s as any)(e.target.value)} sx={inputSx} />
+                      <TextField fullWidth size="small" value={k === "signatoryName" ? signatoryName : signatoryDesignation} onChange={e => (s as any)(e.target.value)} sx={inputSx} />
                     </Box>
                   ))}
-                  <Box sx={{mb:1.5}}>
+                  <Box sx={{ mb: 1.5 }}>
                     <FieldLabel required>Date</FieldLabel>
-                    <TextField fullWidth size="small" type="date" value={signatoryDate} onChange={e=>setSignatoryDate(e.target.value)} sx={inputSx} />
+                    <TextField fullWidth size="small" type="date" value={signatoryDate} onChange={e => setSignatoryDate(e.target.value)} sx={inputSx} />
                   </Box>
                   <Box>
                     <FieldLabel required>Typed Signature (Full Name)</FieldLabel>
-                    <TextField fullWidth size="small" placeholder="Type your full name as signature" value={typedSignature} onChange={e=>setTypedSignature(e.target.value)} sx={{...inputSx,"& .MuiOutlinedInput-root":{ ...inputSx["& .MuiOutlinedInput-root"],fontFamily:"cursive",fontSize:"1rem" }}} />
+                    <TextField fullWidth size="small" placeholder="Type your full name as signature" value={typedSignature} onChange={e => setTypedSignature(e.target.value)} sx={{ ...inputSx, "& .MuiOutlinedInput-root": { ...inputSx["& .MuiOutlinedInput-root"], fontFamily: "cursive", fontSize: "1rem" } }} />
                   </Box>
                 </Box>
-                <Box sx={{ border:`1px solid ${BORDER}`,borderRadius:1.5,p:2 }}>
-                  <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:MAROON,mb:1,textTransform:"uppercase",letterSpacing:0.4 }}>RTI / NIRF Consent</Typography>
-                  <FormControlLabel control={<Switch checked={rtiNirf} onChange={e=>setRtiNirf(e.target.checked)} sx={{"& .MuiSwitch-thumb":{bgcolor:rtiNirf?MAROON:undefined},"& .MuiSwitch-track":{bgcolor:rtiNirf?"rgba(87,0,0,0.4)!important":undefined}}} />} label={<Typography sx={{fontSize:"0.78rem"}}>I consent to share data with RTI / ranking agencies (NIRF)</Typography>} />
-                  <Typography sx={{ fontSize:"0.68rem",color:"#9CA3AF",mt:1 }}>
+                <Box sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, p: 2 }}>
+                  <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: MAROON, mb: 1, textTransform: "uppercase", letterSpacing: 0.4 }}>RTI / NIRF Consent</Typography>
+                  <FormControlLabel control={<Switch checked={rtiNirf} onChange={e => setRtiNirf(e.target.checked)} sx={{ "& .MuiSwitch-thumb": { bgcolor: rtiNirf ? MAROON : undefined }, "& .MuiSwitch-track": { bgcolor: rtiNirf ? "rgba(87,0,0,0.4)!important" : undefined } }} />} label={<Typography sx={{ fontSize: "0.78rem" }}>I consent to share data with RTI / ranking agencies (NIRF)</Typography>} />
+                  <Typography sx={{ fontSize: "0.68rem", color: "#9CA3AF", mt: 1 }}>
                     📧 A confirmation email will be sent to your registered address upon successful submission.
                   </Typography>
                 </Box>
                 {!allDeclared && (
-                  <Alert severity="warning" sx={{ mt:2, fontSize:"0.75rem" }}>
+                  <Alert severity="warning" sx={{ mt: 2, fontSize: "0.75rem" }}>
                     Please check all declaration boxes, fill signatory name, and type your signature to proceed.
                   </Alert>
                 )}
@@ -1105,92 +1107,92 @@ export default function JnfNewPage() {
         {/* ══════════════════ STEP 8: REVIEW & CONFIRM ══════════════════ */}
         {step === 6 && (
           <Box>
-            <Alert severity="info" sx={{ mb:2, fontSize:"0.78rem" }}>
+            <Alert severity="info" sx={{ mb: 2, fontSize: "0.78rem" }}>
               This is a read-only preview of your JNF. To make changes, click <strong>"← Go Back to Edit"</strong> and navigate to any step. Once confirmed, the form will be submitted.
             </Alert>
 
             {/* Company */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Company Profile</Typography>
-                <IconButton size="small" onClick={()=>setStep(0)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Company Profile</Typography>
+                <IconButton size="small" onClick={() => setStep(0)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
-                <ReviewRow label="Company Name"        value={company.company_name} />
-                <ReviewRow label="Website"             value={company.website} />
-                <ReviewRow label="Postal Address"      value={company.postal_address} />
-                <ReviewRow label="Sector"              value={company.sector} />
+              <Box sx={{ p: 2 }}>
+                <ReviewRow label="Company Name" value={company.company_name} />
+                <ReviewRow label="Website" value={company.website} />
+                <ReviewRow label="Postal Address" value={company.postal_address} />
+                <ReviewRow label="Sector" value={company.sector} />
                 <ReviewRow label="Category / Org Type" value={company.category} />
-                <ReviewRow label="Employees"           value={company.employees} />
-                <ReviewRow label="Annual Turnover"     value={company.annual_turnover} />
-                <ReviewRow label="Industry Sectors"    value={industrySectors.join(", ")} />
-                <ReviewRow label="Nature of Business"  value={company.nature_of_business} />
-                <ReviewRow label="LinkedIn"            value={company.linkedin} />
-                <ReviewRow label="HQ Country / City"   value={company.hq_country} />
-                <ReviewRow label="Description"         value={company.description} />
-                {logoFile && <ReviewRow label="Logo"    value={logoFile.name} />}
-                {pdfFile  && <ReviewRow label="Brochure" value={pdfFile.name} />}
+                <ReviewRow label="Employees" value={company.employees} />
+                <ReviewRow label="Annual Turnover" value={company.annual_turnover} />
+                <ReviewRow label="Industry Sectors" value={industrySectors.join(", ")} />
+                <ReviewRow label="Nature of Business" value={company.nature_of_business} />
+                <ReviewRow label="LinkedIn" value={company.linkedin} />
+                <ReviewRow label="HQ Country / City" value={company.hq_country} />
+                <ReviewRow label="Description" value={company.description} />
+                {logoFile && <ReviewRow label="Logo" value={logoFile.name} />}
+                {pdfFile && <ReviewRow label="Brochure" value={pdfFile.name} />}
               </Box>
             </Paper>
 
             {/* Contacts */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Contact & HR Details</Typography>
-                <IconButton size="small" onClick={()=>setStep(1)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Contact & HR Details</Typography>
+                <IconButton size="small" onClick={() => setStep(1)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2, display:"grid", gridTemplateColumns:{xs:"1fr",sm:"1fr 1fr 1fr"}, gap:2 }}>
-                {[["Head Talent Acquisition",headTA],["Primary Contact (PoC 1)",poc1],["Secondary Contact (PoC 2)",poc2]].map(([title,c])=>(
+              <Box sx={{ p: 2, display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr 1fr" }, gap: 2 }}>
+                {[["Head Talent Acquisition", headTA], ["Primary Contact (PoC 1)", poc1], ["Secondary Contact (PoC 2)", poc2]].map(([title, c]) => (
                   <Box key={title as string}>
-                    <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:MAROON,mb:0.8,textTransform:"uppercase" }}>{title as string}</Typography>
-                    {Object.entries(c as any).map(([k,v])=>v?<ReviewRow key={k} label={k} value={v as string} />:null)}
+                    <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: MAROON, mb: 0.8, textTransform: "uppercase" }}>{title as string}</Typography>
+                    {Object.entries(c as any).map(([k, v]) => v ? <ReviewRow key={k} label={k} value={v as string} /> : null)}
                   </Box>
                 ))}
               </Box>
             </Paper>
 
             {/* Job */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Job Profile</Typography>
-                <IconButton size="small" onClick={()=>setStep(2)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Job Profile</Typography>
+                <IconButton size="small" onClick={() => setStep(2)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
-                <ReviewRow label="Job Title"        value={job.job_title} />
-                <ReviewRow label="Designation"      value={job.job_formal_designation} />
+              <Box sx={{ p: 2 }}>
+                <ReviewRow label="Job Title" value={job.job_title} />
+                <ReviewRow label="Designation" value={job.job_formal_designation} />
                 <ReviewRow label="Place of Posting" value={job.place_of_posting} />
-                <ReviewRow label="Work Mode"        value={job.work_mode} />
-                <ReviewRow label="Expected Hires"   value={job.expected_hires} />
-                <ReviewRow label="Min Hires"        value={job.min_hires} />
-                <ReviewRow label="Joining Month"    value={job.joining_month} />
-                <ReviewRow label="Required Skills"  value={skills.join(", ")} />
-                <ReviewRow label="Bond Details"     value={job.bond_details} />
-                <ReviewRow label="Reg. Link"        value={job.registration_link} />
-                {job.job_description && <Box sx={{ py:0.5, borderBottom:`1px solid ${BORDER}` }}>
-                  <Typography sx={{ fontSize:"0.72rem",color:"#9CA3AF",fontWeight:600,mb:0.3 }}>Job Description</Typography>
-                  <Typography sx={{ fontSize:"0.78rem",color:"#374151",whiteSpace:"pre-wrap" }}>{job.job_description}</Typography>
+                <ReviewRow label="Work Mode" value={job.work_mode} />
+                <ReviewRow label="Expected Hires" value={job.expected_hires} />
+                <ReviewRow label="Min Hires" value={job.min_hires} />
+                <ReviewRow label="Joining Month" value={job.joining_month} />
+                <ReviewRow label="Required Skills" value={skills.join(", ")} />
+                <ReviewRow label="Bond Details" value={job.bond_details} />
+                <ReviewRow label="Reg. Link" value={job.registration_link} />
+                {job.job_description && <Box sx={{ py: 0.5, borderBottom: `1px solid ${BORDER}` }}>
+                  <Typography sx={{ fontSize: "0.72rem", color: "#9CA3AF", fontWeight: 600, mb: 0.3 }}>Job Description</Typography>
+                  <Typography sx={{ fontSize: "0.78rem", color: "#374151", whiteSpace: "pre-wrap" }}>{job.job_description}</Typography>
                 </Box>}
               </Box>
             </Paper>
 
             {/* Eligibility summary */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Eligibility & Courses</Typography>
-                <IconButton size="small" onClick={()=>setStep(3)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Eligibility & Courses</Typography>
+                <IconButton size="small" onClick={() => setStep(3)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
+              <Box sx={{ p: 2 }}>
                 {Object.entries(eligibility).map(([prog, branches]) => {
-                  const selected = Object.entries(branches).filter(([,d])=>d.checked);
+                  const selected = Object.entries(branches).filter(([, d]) => d.checked);
                   if (!selected.length) return null;
                   return (
-                    <Box key={prog} sx={{ mb:2 }}>
-                      <Typography sx={{ fontWeight:800,fontSize:"0.72rem",color:MAROON,mb:0.5,textTransform:"uppercase" }}>{prog}</Typography>
-                      {selected.map(([b,d]) => (
-                        <Box key={b} sx={{ display:"flex",alignItems:"center",gap:1,py:0.3,pl:1. }}>
-                          <Typography sx={{ fontSize:"0.75rem",flex:1 }}>• {b}</Typography>
-                          <Typography sx={{ fontSize:"0.68rem",color:"#9CA3AF" }}>CGPA: {d.cgpa}</Typography>
-                          <Box sx={{ px:0.8,py:0.1,borderRadius:0.5,bgcolor:d.backlogs?"#DCFCE7":"#FEE2E2",color:d.backlogs?"#059669":"#C41230",fontSize:"0.6rem",fontWeight:800 }}>{d.backlogs?"YES":"NO"}</Box>
+                    <Box key={prog} sx={{ mb: 2 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: "0.72rem", color: MAROON, mb: 0.5, textTransform: "uppercase" }}>{prog}</Typography>
+                      {selected.map(([b, d]) => (
+                        <Box key={b} sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.3, pl: 1. }}>
+                          <Typography sx={{ fontSize: "0.75rem", flex: 1 }}>• {b}</Typography>
+                          <Typography sx={{ fontSize: "0.68rem", color: "#9CA3AF" }}>CGPA: {d.cgpa}</Typography>
+                          <Box sx={{ px: 0.8, py: 0.1, borderRadius: 0.5, bgcolor: d.backlogs ? "#DCFCE7" : "#FEE2E2", color: d.backlogs ? "#059669" : "#C41230", fontSize: "0.6rem", fontWeight: 800 }}>{d.backlogs ? "YES" : "NO"}</Box>
                         </Box>
                       ))}
                     </Box>
@@ -1200,58 +1202,58 @@ export default function JnfNewPage() {
             </Paper>
 
             {/* Salary */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Salary Details ({currency})</Typography>
-                <IconButton size="small" onClick={()=>setStep(4)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Salary Details ({currency})</Typography>
+                <IconButton size="small" onClick={() => setStep(4)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
-                <Box sx={{ display:"grid",gridTemplateColumns:"180px 1fr 1fr 1fr",gap:1,py:0.8,borderBottom:`1px solid ${BORDER}`,mb:0.5 }}>
-                  {["Programme","CTC","Base","In Hand"].map(h=><Typography key={h} sx={{fontSize:"0.68rem",fontWeight:800,color:"#9CA3AF",textTransform:"uppercase"}}>{h}</Typography>)}
+              <Box sx={{ p: 2 }}>
+                <Box sx={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 1, py: 0.8, borderBottom: `1px solid ${BORDER}`, mb: 0.5 }}>
+                  {["Programme", "CTC", "Base", "In Hand"].map(h => <Typography key={h} sx={{ fontSize: "0.68rem", fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase" }}>{h}</Typography>)}
                 </Box>
-                {SALARY_PROGS.map(p=>(salary[p]?.ctc||salary[p]?.base||salary[p]?.inhand)&&(
-                  <Box key={p} sx={{ display:"grid",gridTemplateColumns:"180px 1fr 1fr 1fr",gap:1,py:0.5,borderBottom:`1px solid ${BORDER}` }}>
-                    <Typography sx={{fontSize:"0.78rem",fontWeight:600}}>{p}</Typography>
-                    {["ctc","base","inhand"].map(k=><Typography key={k} sx={{fontSize:"0.78rem",color:"#374151"}}>{(salary[p] as any)[k]||"—"}</Typography>)}
+                {SALARY_PROGS.map(p => (salary[p]?.ctc || salary[p]?.base || salary[p]?.inhand) && (
+                  <Box key={p} sx={{ display: "grid", gridTemplateColumns: "180px 1fr 1fr 1fr", gap: 1, py: 0.5, borderBottom: `1px solid ${BORDER}` }}>
+                    <Typography sx={{ fontSize: "0.78rem", fontWeight: 600 }}>{p}</Typography>
+                    {["ctc", "base", "inhand"].map(k => <Typography key={k} sx={{ fontSize: "0.78rem", color: "#374151" }}>{(salary[p] as any)[k] || "—"}</Typography>)}
                   </Box>
                 ))}
               </Box>
             </Paper>
 
             {/* Selection */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:2 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>Selection Process</Typography>
-                <IconButton size="small" onClick={()=>setStep(5)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 2 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>Selection Process</Typography>
+                <IconButton size="small" onClick={() => setStep(5)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
-                <ReviewRow label="Stages" value={SELECTION_STAGES_LIST.filter(s=>stages[s.key]).map(s=>s.label.replace("\n"," ")).join(", ")} />
-                <ReviewRow label="Selection Mode"  value={selectionMode} />
-                <ReviewRow label="Test Type"       value={testType} />
+              <Box sx={{ p: 2 }}>
+                <ReviewRow label="Stages" value={SELECTION_STAGES_LIST.filter(s => stages[s.key]).map(s => s.label.replace("\n", " ")).join(", ")} />
+                <ReviewRow label="Selection Mode" value={selectionMode} />
+                <ReviewRow label="Test Type" value={testType} />
                 <ReviewRow label="Interview Modes" value={interviewModes.join(", ")} />
-                <ReviewRow label="Psychometric"    value={psychometricTest?"Yes":"No"} />
-                <ReviewRow label="Medical Test"    value={medicalTest?"Yes":"No"} />
-                <ReviewRow label="Infrastructure"  value={infrastructure} />
+                <ReviewRow label="Psychometric" value={psychometricTest ? "Yes" : "No"} />
+                <ReviewRow label="Medical Test" value={medicalTest ? "Yes" : "No"} />
+                <ReviewRow label="Infrastructure" value={infrastructure} />
                 <ReviewRow label="Other Screening" value={otherScreening} />
-                {testRounds.some(r=>r.name) && <ReviewRow label="Test Rounds" value={testRounds.filter(r=>r.name).map(r=>`${r.name}${r.duration?" ("+r.duration+" min)":""}${r.type?" — "+r.type:""}`).join("; ")} />}
-                {interviewRounds.some(r=>r.name) && <ReviewRow label="Interview Rounds" value={interviewRounds.filter(r=>r.name).map(r=>`${r.name}${r.duration?" ("+r.duration+" min)":""}${r.mode?" — "+r.mode:""}`).join("; ")} />}
+                {testRounds.some(r => r.name) && <ReviewRow label="Test Rounds" value={testRounds.filter(r => r.name).map(r => `${r.name}${r.duration ? " (" + r.duration + " min)" : ""}${r.type ? " — " + r.type : ""}`).join("; ")} />}
+                {interviewRounds.some(r => r.name) && <ReviewRow label="Interview Rounds" value={interviewRounds.filter(r => r.name).map(r => `${r.name}${r.duration ? " (" + r.duration + " min)" : ""}${r.mode ? " — " + r.mode : ""}`).join("; ")} />}
               </Box>
             </Paper>
 
             {/* Declaration */}
-            <Paper elevation={0} sx={{ border:`1px solid ${BORDER}`, borderRadius:1.5, overflow:"hidden", mb:3 }}>
-              <Box sx={{ bgcolor:MAROON,px:2,py:1,display:"flex",justifyContent:"space-between",alignItems:"center" }}>
-                <Typography sx={{ color:WHITE,fontWeight:800,fontSize:"0.82rem" }}>09 — Declaration</Typography>
-                <IconButton size="small" onClick={()=>setStep(6)} sx={{ color:"rgba(255,255,255,0.7)","&:hover":{color:WHITE} }}><EditIcon sx={{fontSize:16}} /></IconButton>
+            <Paper elevation={0} sx={{ border: `1px solid ${BORDER}`, borderRadius: 1.5, overflow: "hidden", mb: 3 }}>
+              <Box sx={{ bgcolor: MAROON, px: 2, py: 1, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <Typography sx={{ color: WHITE, fontWeight: 800, fontSize: "0.82rem" }}>09 — Declaration</Typography>
+                <IconButton size="small" onClick={() => setStep(6)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: WHITE } }}><EditIcon sx={{ fontSize: 16 }} /></IconButton>
               </Box>
-              <Box sx={{ p:2 }}>
-                <ReviewRow label="Signatory Name"        value={signatoryName} />
+              <Box sx={{ p: 2 }}>
+                <ReviewRow label="Signatory Name" value={signatoryName} />
                 <ReviewRow label="Signatory Designation" value={signatoryDesignation} />
-                <ReviewRow label="Date"                  value={signatoryDate} />
-                <ReviewRow label="Typed Signature"       value={typedSignature} />
-                <ReviewRow label="RTI/NIRF Consent"      value={rtiNirf?"Consented":"Not consented"} />
-                <Box sx={{ mt:1 }}>
-                  <Typography sx={{ fontSize:"0.72rem",color:"#6B7280",fontWeight:600 }}>
+                <ReviewRow label="Date" value={signatoryDate} />
+                <ReviewRow label="Typed Signature" value={typedSignature} />
+                <ReviewRow label="RTI/NIRF Consent" value={rtiNirf ? "Consented" : "Not consented"} />
+                <Box sx={{ mt: 1 }}>
+                  <Typography sx={{ fontSize: "0.72rem", color: "#6B7280", fontWeight: 600 }}>
                     Declarations: {declarations.filter(Boolean).length}/{DECLARATION_ITEMS.length} accepted
                   </Typography>
                 </Box>
@@ -1259,21 +1261,21 @@ export default function JnfNewPage() {
             </Paper>
 
             {/* Final CTA */}
-            <Box sx={{ border:`2px solid ${MAROON}`, borderRadius:2, p:3, bgcolor:"rgba(87,0,0,0.02)" }}>
-              <Typography sx={{ fontWeight:900, fontSize:"0.9rem", color:MAROON, mb:0.5 }}>✅ Ready to Submit</Typography>
-              <Typography sx={{ fontSize:"0.78rem", color:"#6B7280", mb:2 }}>
+            <Box sx={{ border: `2px solid ${MAROON}`, borderRadius: 2, p: 3, bgcolor: "rgba(87,0,0,0.02)" }}>
+              <Typography sx={{ fontWeight: 900, fontSize: "0.9rem", color: MAROON, mb: 0.5 }}>✅ Ready to Submit</Typography>
+              <Typography sx={{ fontSize: "0.78rem", color: "#6B7280", mb: 2 }}>
                 By clicking "Confirm & Submit JNF", the form will be finalized and sent to the CDC team. A confirmation email will be sent to your registered email address.
               </Typography>
-              {!allDeclared && <Alert severity="warning" sx={{ mb:2, fontSize:"0.75rem" }}>Please go back to Declaration step and complete all required fields before submitting.</Alert>}
-              <Box sx={{ display:"flex", gap:2, flexWrap:"wrap" }}>
-                <Button variant="outlined" startIcon={<ArrowBackIcon/>} onClick={()=>setStep(6)} sx={{ textTransform:"none",color:MAROON,borderColor:MAROON,fontWeight:700,"&:hover":{bgcolor:"rgba(87,0,0,0.04)"} }}>
+              {!allDeclared && <Alert severity="warning" sx={{ mb: 2, fontSize: "0.75rem" }}>Please go back to Declaration step and complete all required fields before submitting.</Alert>}
+              <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => setStep(5)} sx={{ textTransform: "none", color: MAROON, borderColor: MAROON, fontWeight: 700, "&:hover": { bgcolor: "rgba(87,0,0,0.04)" } }}>
                   ← Go Back to Edit
                 </Button>
-                <Button variant="contained" endIcon={submitting?<CircularProgress size={14} sx={{color:WHITE}} />:<SendRoundedIcon sx={{fontSize:18}} />}
-                  disabled={!allDeclared||submitting}
+                <Button variant="contained" endIcon={submitting ? <CircularProgress size={14} sx={{ color: WHITE }} /> : <SendIcon />}
+                  disabled={!allDeclared || submitting}
                   onClick={handleSubmit}
-                  sx={{ textTransform:"none",bgcolor:"#14532D",color:WHITE,fontWeight:900,px:4,"&:hover":{bgcolor:"#166534"},"&.Mui-disabled":{bgcolor:"#D1D5DB"} }}>
-                  {submitting?"Submitting…":"Confirm & Submit JNF"}
+                  sx={{ textTransform: "none", bgcolor: "#14532D", color: WHITE, fontWeight: 900, px: 4, "&:hover": { bgcolor: "#166534" }, "&.Mui-disabled": { bgcolor: "#D1D5DB" } }}>
+                  {submitting ? "Submitting…" : "Confirm & Submit JNF"}
                 </Button>
               </Box>
             </Box>
@@ -1282,25 +1284,25 @@ export default function JnfNewPage() {
 
         {/* ── Navigation ─────────────────────────────────────────── */}
         {step < 6 && (
-          <Box sx={{ display:"flex", justifyContent:"space-between", alignItems:"center", mt:3 }}>
-            <Button variant="outlined" startIcon={<ArrowBackIcon/>} onClick={()=>setStep(s=>s-1)} disabled={step===0}
-              sx={{ textTransform:"none",color:MAROON,borderColor:MAROON,fontWeight:700,"&:hover":{bgcolor:"rgba(87,0,0,0.04)"} }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mt: 3 }}>
+            <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => setStep(s => s - 1)} disabled={step === 0}
+              sx={{ textTransform: "none", color: MAROON, borderColor: MAROON, fontWeight: 700, "&:hover": { bgcolor: "rgba(87,0,0,0.04)" } }}>
               Back
             </Button>
-            <Typography sx={{ fontSize:"0.7rem",color:"#9CA3AF",fontWeight:600 }}>Step {step+1} of {STEPS.length}</Typography>
-            <Button variant="contained" endIcon={saving?<CircularProgress size={14} sx={{color:WHITE}}/>:<ArrowForwardIcon/>}
-              onClick={step===6?handleNext:handleNext}
-              disabled={saving||(step===5&&!allDeclared)}
-              sx={{ textTransform:"none",bgcolor:MAROON,color:WHITE,fontWeight:800,px:3,"&:hover":{bgcolor:RED} }}>
-              {saving?"Saving…":step===5?"Save & Review":"Save & Continue"}
+            <Typography sx={{ fontSize: "0.7rem", color: "#9CA3AF", fontWeight: 600 }}>Step {step + 1} of {STEPS.length}</Typography>
+            <Button variant="contained" endIcon={saving ? <CircularProgress size={14} sx={{ color: WHITE }} /> : <ArrowForwardIcon />}
+              onClick={step === 6 ? handleNext : handleNext}
+              disabled={saving || (step === 5 && !allDeclared)}
+              sx={{ textTransform: "none", bgcolor: MAROON, color: WHITE, fontWeight: 800, px: 3, "&:hover": { bgcolor: RED } }}>
+              {saving ? "Saving…" : step === 5 ? "Save & Review" : "Save & Continue"}
             </Button>
           </Box>
         )}
       </Box>
 
       {/* Toast */}
-      <Snackbar open={toast.open} autoHideDuration={3500} onClose={()=>setToast(p=>({...p,open:false}))} anchorOrigin={{vertical:"bottom",horizontal:"right"}}>
-        <Alert severity={toast.type} sx={{ fontWeight:700, fontSize:"0.8rem" }}>{toast.msg}</Alert>
+      <Snackbar open={toast.open} autoHideDuration={3500} onClose={() => setToast(p => ({ ...p, open: false }))} anchorOrigin={{ vertical: "bottom", horizontal: "right" }}>
+        <Alert severity={toast.type} sx={{ fontWeight: 700, fontSize: "0.8rem" }}>{toast.msg}</Alert>
       </Snackbar>
 
       {/* AI PDF Upload Dialog */}

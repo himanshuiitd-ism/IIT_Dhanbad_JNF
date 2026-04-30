@@ -264,8 +264,8 @@ export default function RegisterPage() {
             {step === 0
               ? "Verify your company email to get started. We'll send a 6-digit OTP."
               : step === 1
-              ? "Enter your recruiter details to finish setting up your account."
-              : "Almost done — set up your company profile and start recruiting."}
+                ? "Enter your recruiter details to finish setting up your account."
+                : "Almost done — set up your company profile and start recruiting."}
           </Typography>
         </Box>
 
@@ -485,6 +485,7 @@ export default function RegisterPage() {
                   type={showPass ? "text" : "password"}
                   fullWidth placeholder="Min. 8 characters"
                   value={password} onChange={(e) => setPassword(e.target.value)}
+                  helperText="Password must be at least 8 characters long."
                   InputProps={{
                     startAdornment: <InputAdornment position="start"><LockOutlinedIcon sx={{ color: MAROON, fontSize: 18 }} /></InputAdornment>,
                     endAdornment: (
